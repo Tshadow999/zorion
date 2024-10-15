@@ -11,6 +11,95 @@ fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
     std.log.err("glfw:{}: {s}\n", .{ error_code, description });
 }
 
+const Mesh = struct {
+    vertices: [32]f32 = [1]f32{0} ** 32,
+    indices: [32]u32 = [1]u32{0} ** 32,
+
+    vertexCount: u32 = 0,
+    indexCount: u32 = 0,
+
+    vao: u32 = undefined,
+    vbo: u32 = undefined,
+    ibo: u32 = undefined,
+
+    const Self = @This();
+
+    fn create(self: *Self) void {
+        gl.genVertexArrays(1, &self.vao);
+        gl.genBuffers(1, &self.vbo);
+        gl.genBuffers(1, &self.ibo);
+
+        gl.bindVertexArray(self.vao);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, self.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, self.vertexCount * @sizeOf(f32), &self.vertices, gl.STATIC_DRAW);
+
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * @sizeOf(f32), null);
+        gl.enableVertexAttribArray(0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indexCount * @sizeOf(u32), &self.indices, gl.STATIC_DRAW);
+
+        gl.bindVertexArray(0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    fn bind(self: *Self) void {
+        gl.bindVertexArray(self.vao);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo);
+
+        gl.drawElements(gl.TRIANGLES, @intCast(self.indexCount), gl.UNSIGNED_INT, null);
+    }
+
+    fn deinit(self: *Self) void {
+        gl.deleteVertexArrays(1, &self.vao);
+        gl.deleteBuffers(1, &self.vbo);
+        gl.deleteBuffers(1, &self.ibo);
+    }
+};
+
+const Shader = struct {
+    program: u32 = 0,
+    vertexSource: []const u8,
+    fragmentSource: []const u8,
+
+    const Self = @This();
+
+    fn load(self: *Self, vertexPath: []u8, fragmentPath: []u8) void {
+        _ = self;
+        _ = vertexPath;
+        _ = fragmentPath;
+    }
+
+    fn bind(self: *Self) void {
+        gl.useProgram(self.program);
+    }
+
+    fn compile(self: *Self) void {
+        const vertShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertShader, 1, &self.vertexSource.ptr, null);
+        gl.compileShader(vertShader);
+
+        const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragShader, 1, &self.fragmentSource.ptr, null);
+        gl.compileShader(fragShader);
+
+        self.program = gl.createProgram();
+        gl.attachShader(self.program, vertShader);
+        gl.attachShader(self.program, fragShader);
+
+        gl.linkProgram(self.program);
+
+        gl.compileShader(vertShader);
+        gl.compileShader(fragShader);
+    }
+
+    fn deinit(self: *Self) void {
+        gl.deleteProgram(self.program);
+    }
+};
+
 pub fn main() !void {
     glfw.setErrorCallback(errorCallback);
     if (!glfw.init(.{})) {
@@ -46,57 +135,22 @@ pub fn main() !void {
         0, 1, 2,
     };
 
-    // Construct Index buffer
-    var indexBufferObj: u32 = undefined;
-    gl.genBuffers(1, &indexBufferObj);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObj);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(u32), &indices, gl.STATIC_DRAW);
+    var triangle = Mesh{};
+    @memcpy(triangle.vertices[0..verts.len], verts[0..]);
+    @memcpy(triangle.indices[0..indices.len], indices[0..]);
+    triangle.vertexCount = verts.len;
+    triangle.indexCount = indices.len;
 
-    // Contruct Vertex array
-    var vertexArrayObj: u32 = undefined;
-    gl.genVertexArrays(1, &vertexArrayObj);
-    gl.bindVertexArray(vertexArrayObj);
+    triangle.create();
+    defer triangle.deinit();
 
-    // Contruct Vertex buffer
-    var vertexBufferObj: u32 = undefined;
-    gl.genBuffers(1, &vertexBufferObj);
+    var triangleShader = Shader{
+        .fragmentSource = @embedFile("frag.glsl"),
+        .vertexSource = @embedFile("vert.glsl"),
+    };
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObj);
-    gl.bufferData(gl.ARRAY_BUFFER, verts.len * @sizeOf(f32), &verts, gl.STATIC_DRAW);
-
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * @sizeOf(f32), null);
-    gl.enableVertexAttribArray(0);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0);
-    gl.bindVertexArray(0);
-
-    // Shaders
-
-    // Vertex
-    const vertShaderSource: [*]const u8 = @embedFile("vert.glsl");
-    const vertShader: u32 = gl.createShader(gl.VERTEX_SHADER);
-
-    gl.shaderSource(vertShader, 1, &vertShaderSource, null);
-    gl.compileShader(vertShader);
-
-    // Fragment
-    const fragShaderSource: [*]const u8 = @embedFile("frag.glsl");
-    const fragShader: u32 = gl.createShader(gl.FRAGMENT_SHADER);
-
-    gl.shaderSource(fragShader, 1, &fragShaderSource, null);
-    gl.compileShader(fragShader);
-
-    const shaderProgram = gl.createProgram();
-    gl.attachShader(shaderProgram, vertShader);
-    gl.attachShader(shaderProgram, fragShader);
-
-    gl.linkProgram(shaderProgram);
-
-    gl.deleteShader(vertShader);
-    gl.deleteShader(fragShader);
-
-    gl.useProgram(shaderProgram);
+    triangleShader.compile();
+    defer triangleShader.deinit();
 
     while (!window.shouldClose()) {
         glfw.pollEvents();
@@ -105,10 +159,8 @@ pub fn main() !void {
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         // Draw triangle
-        gl.useProgram(shaderProgram);
-        gl.bindVertexArray(vertexArrayObj);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBufferObj);
-        gl.drawElements(gl.TRIANGLES, indices.len, gl.UNSIGNED_INT, null);
+        triangleShader.bind();
+        triangle.bind();
 
         window.swapBuffers();
     }
