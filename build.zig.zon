@@ -1,0 +1,20 @@
+.{
+    .name = "Zorion",
+    .version = "0.0.1",
+    .minimum_zig_version = "0.13.0",
+    .dependencies = .{
+        .mach_glfw = .{
+            .url = "https://github.com/silversquirl/mach-glfw/archive/ccf677602328d3ec3f9103f705ae2c3e6ebde271.tar.gz",
+            .hash = "1220cdcde5cb8c8e323ebfbdcbde734ac5638bacaa5e6affabd4fbfd74fecf6eace4",
+        },
+        // .zgltf = .{
+        //     .url = "https://github.com/kooparse/zgltf/archive/17fb60b270fa25b3e07b7b3cdb253f86747f9616.tar.gz",
+        //     .hash = "1220ff2dbebeb83461da67b185d994ae61ebcea747c1bfbfb48b23c8e456cc53ea83",
+        // },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
