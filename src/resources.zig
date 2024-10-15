@@ -1,6 +1,5 @@
 const std = @import("std");
 const gl = @import("gl");
-const Allocator = std.mem.Allocator;
 
 pub const Mesh = struct {
     vertices: std.ArrayList(f32),
@@ -12,7 +11,7 @@ pub const Mesh = struct {
 
     const Self = @This();
 
-    pub fn init(allocator: Allocator) Mesh {
+    pub fn init(allocator: std.mem.Allocator) Mesh {
         return .{
             .vertices = std.ArrayList(f32).init(allocator),
             .indices = std.ArrayList(u32).init(allocator),
