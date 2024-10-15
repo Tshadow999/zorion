@@ -69,9 +69,9 @@ fn addDependencies(
     // }).module("zgltf"));
 
     // mach math
-    // exe.root_module.addImport("math", b.createModule(.{
-    //     .root_source_file = b.path("deps/math/main.zig"),
-    // }));
+    exe.root_module.addImport("math", b.createModule(.{
+        .root_source_file = b.path("deps/math/main.zig"),
+    }));
 
     // Include C
     exe.linkLibC();
