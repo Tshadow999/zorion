@@ -1,5 +1,6 @@
 const std = @import("std");
 const gl = @import("gl");
+const math = @import("math");
 
 pub const Mesh = struct {
     vertices: std.ArrayList(f32),
@@ -77,10 +78,12 @@ pub const Shader = struct {
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertShader, 1, &self.vertexSource.ptr, null);
         gl.compileShader(vertShader);
+        checkShaderCompileStatus(vertShader, "VERTEX");
 
         const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragShader, 1, &self.fragmentSource.ptr, null);
         gl.compileShader(fragShader);
+        checkShaderCompileStatus(fragShader, "FRAGMENT");
 
         self.program = gl.createProgram();
         gl.attachShader(self.program, vertShader);
@@ -88,11 +91,41 @@ pub const Shader = struct {
 
         gl.linkProgram(self.program);
 
-        gl.compileShader(vertShader);
-        gl.compileShader(fragShader);
+        gl.deleteShader(vertShader);
+        gl.deleteShader(fragShader);
+    }
+
+    fn checkShaderCompileStatus(shader: u32, shaderType: []const u8) void {
+        var status: i32 = 0;
+        gl.getShaderiv(shader, gl.COMPILE_STATUS, &status);
+        if (status == gl.FALSE) {
+            var logLength: i32 = 0;
+            gl.getShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength);
+
+            var log = std.ArrayList(u8).init(std.heap.page_allocator);
+            defer log.deinit();
+            // try log.ensureTotalCapacity(@intCast(logLength));
+            gl.getShaderInfoLog(shader, logLength, null, log.items.ptr);
+
+            std.log.err("{s} Shader compile error: {s}", .{ shaderType, log.items });
+            std.process.exit(1);
+        }
     }
 
     pub fn deinit(self: *Self) void {
         gl.deleteProgram(self.program);
+    }
+
+    // Shader uniforms:
+
+    pub fn getUniformLocation(self: *Self, name: []const u8) i32 {
+        return gl.getUniformLocation(self.program, name.ptr);
+    }
+
+    pub fn setMat4(location: i32, matrix: math.Mat4x4) void {
+        gl.uniformMatrix4fv(@intCast(location), 1, gl.FALSE, &matrix.v[0].v[0]);
+    }
+    pub fn setVec3(location: i32, vec3: math.Vec3) void {
+        gl.uniform3fv(location, 1, &vec3.v[0]);
     }
 };

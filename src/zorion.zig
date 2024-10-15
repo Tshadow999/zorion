@@ -2,8 +2,11 @@ const std = @import("std");
 const glfw = @import("mach-glfw");
 const gl = @import("gl");
 
+const math = @import("math");
+
 pub const Engine = struct {
     window: glfw.Window = undefined,
+    camera: Camera3D = .{},
 
     const Self = @This();
 
@@ -48,9 +51,14 @@ pub const Engine = struct {
         self.window.destroy();
         glfw.terminate();
     }
+
     pub fn isRunning(self: *Self) bool {
         return !self.window.shouldClose();
     }
+};
+
+pub const Camera3D = struct {
+    projection: math.Mat4x4 = math.Mat4x4.ident,
 };
 
 fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
