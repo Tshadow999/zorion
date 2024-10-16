@@ -11,11 +11,8 @@ const math = @import("math");
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
-    const window = try engine.init();
-    _ = window;
+    const window = try engine.init(1280, 720);
     defer engine.deinit();
-
-    engine.camera.projection = math.Mat4x4.perspective(math.degreesToRadians(60.0), 16.0 / 9.0, 0.01, 10_000);
 
     // Contruct triangle position
     const verts = [_]f32{
@@ -51,16 +48,36 @@ pub fn main() !void {
 
     // Contruct Square position
     const squareVerts = [_]f32{
-        -0.5, -0.5, 0.0, // bottom left
-        0.5, -0.5, 0.0, // bottom right
-        0.5, 0.5, 0.0, // top right
-        -0.5, 0.5, 0.0, // top left
+        0, 0, 0, // 0
+        1, 0, 0, // 1
+        1, 1, 0, // 2
+        0, 1, 0, // 3
+        0, 0, 1, // 4
+        1, 0, 1, // 5
+        1, 1, 1, // 6
+        0, 1, 1, // 7
     };
 
     // Indices
     const squareIndices = [_]u32{
+        // front
         0, 1, 2,
         0, 2, 3,
+        // back
+        4, 5, 6,
+        4, 6, 7,
+        // left
+        4, 0, 3,
+        4, 3, 7,
+        // right
+        1, 5, 6,
+        1, 6, 2,
+        // top
+        3, 2, 6,
+        3, 6, 7,
+        // bottom
+        4, 5, 1,
+        4, 1, 0,
     };
 
     var square = Mesh.init(alloc);
@@ -73,13 +90,53 @@ pub fn main() !void {
 
     var motion = math.vec3(0, 0, 0);
 
+    var camOffset = math.vec3(0.0, 0.0, 0.0);
+
     while (engine.isRunning()) {
         engine.render();
 
-        // Draw triangle
-        shader.bind();
+        // Quick escape
+        if (window.getKey(.escape) == .press) {
+            window.setShouldClose(true);
+        }
+
+        // moving camera
+        if (window.getKey(.s) == .press) {
+            camOffset.v[2] += 0.001;
+        } else if (window.getKey(.w) == .press) {
+            camOffset.v[2] -= 0.001;
+        }
+
+        if (window.getKey(.a) == .press) {
+            camOffset.v[0] += 0.001;
+        } else if (window.getKey(.d) == .press) {
+            camOffset.v[0] -= 0.001;
+        }
+
+        if (window.getKey(.z) == .press) {
+            camOffset.v[1] += 0.001;
+        } else if (window.getKey(.x) == .press) {
+            camOffset.v[1] -= 0.001;
+        }
+
+        // Updating camera settings
+        if (window.getKey(.q) == .press) {
+            engine.camera.near += 0.001;
+            engine.camera.UpdateProjection();
+        } else if (window.getKey(.e) == .press) {
+            engine.camera.near -= 0.001;
+            engine.camera.UpdateProjection();
+        }
+
+        const camOffsetMat = math.Mat4x4.translate(camOffset);
+        engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
+
+        // std.log.info("pos:{}", .{camOffset});
 
         motion.v[0] = @floatCast(@sin(glfw.getTime()));
+
+        // Update Shader uniforms
+        shader.bind();
 
         var uniformLocation = shader.getUniformLocation("offset");
         Shader.setVec3(uniformLocation, motion);
@@ -87,8 +144,11 @@ pub fn main() !void {
         uniformLocation = shader.getUniformLocation("projection");
         Shader.setMat4(uniformLocation, engine.camera.projection);
 
-        triangle.bind();
-        // square.bind();
+        uniformLocation = shader.getUniformLocation("view");
+        Shader.setMat4(uniformLocation, engine.camera.view);
 
+        // Create the flat triangle and cube meshes
+        triangle.bind();
+        square.bind();
     }
 }
