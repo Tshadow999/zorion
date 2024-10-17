@@ -122,10 +122,20 @@ pub const Shader = struct {
         return gl.getUniformLocation(self.program, name.ptr);
     }
 
-    pub fn setMat4(location: i32, matrix: math.Mat4x4) void {
-        gl.uniformMatrix4fv(@intCast(location), 1, gl.FALSE, &matrix.v[0].v[0]);
-    }
-    pub fn setVec3(location: i32, vec3: math.Vec3) void {
-        gl.uniform3fv(location, 1, &vec3.v[0]);
+    // TODO add more types
+    pub fn setUniform(location: i32, uniform: anytype) void {
+        switch (@TypeOf(uniform)) {
+            i32 => gl.uniform1i(location, uniform),
+            u32 => gl.uniform1ui(location, uniform),
+            f32 => gl.uniform1f(location, uniform),
+            math.Vec2 => gl.uniform2fv(location, 1, &uniform.v[0]),
+            math.Vec3 => gl.uniform3fv(location, 1, &uniform.v[0]),
+            math.Vec4 => gl.uniform4fv(location, 1, &uniform.v[0]),
+            math.Mat4x4 => gl.uniformMatrix4fv(@intCast(location), 1, gl.FALSE, &uniform.v[0].v[0]),
+            else => {
+                std.log.err("Uniform type not yet implemented: ({})", .{@TypeOf(uniform)});
+                std.process.exit(1);
+            },
+        }
     }
 };

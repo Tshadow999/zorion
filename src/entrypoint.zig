@@ -11,7 +11,8 @@ const math = @import("math");
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
-    const window = try engine.init(1280, 720);
+    const window = try engine.init(.{});
+
     defer engine.deinit();
 
     // Contruct triangle position
@@ -90,7 +91,7 @@ pub fn main() !void {
 
     var motion = math.vec3(0, 0, 0);
 
-    var camOffset = math.vec3(0.0, 0.0, 0.0);
+    var camOffset = math.vec3(0.0, 0.0, 3);
 
     while (engine.isRunning()) {
         engine.render();
@@ -131,21 +132,19 @@ pub fn main() !void {
         const camOffsetMat = math.Mat4x4.translate(camOffset);
         engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
 
-        // std.log.info("pos:{}", .{camOffset});
-
         motion.v[0] = @floatCast(@sin(glfw.getTime()));
 
         // Update Shader uniforms
         shader.bind();
 
         var uniformLocation = shader.getUniformLocation("offset");
-        Shader.setVec3(uniformLocation, motion);
+        Shader.setUniform(uniformLocation, motion);
 
         uniformLocation = shader.getUniformLocation("projection");
-        Shader.setMat4(uniformLocation, engine.camera.projection);
+        Shader.setUniform(uniformLocation, engine.camera.projection);
 
         uniformLocation = shader.getUniformLocation("view");
-        Shader.setMat4(uniformLocation, engine.camera.view);
+        Shader.setUniform(uniformLocation, engine.camera.view);
 
         // Create the flat triangle and cube meshes
         triangle.bind();

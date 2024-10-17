@@ -4,17 +4,25 @@ const gl = @import("gl");
 
 const math = @import("math");
 
+pub const WindowProps = struct {
+    width: u32 = 1280,
+    height: u32 = 720,
+    title: [:0]const u8 = "Zorion Engine",
+    vsync: bool = true,
+};
+
 pub const Engine = struct {
     window: glfw.Window = undefined,
     camera: Camera3D = .{},
 
     const Self = @This();
 
-    pub fn init(self: *Self, screenWidth: u16, screenHeight: u16) !glfw.Window {
-        if (screenWidth < 300 or screenHeight < 300) {
-            std.log.err("Invalid screen size", .{});
-            std.process.exit(1);
-        }
+    pub fn init(self: *Self, windowProps: WindowProps) !glfw.Window {
+        // Not sure if I need this check
+        // if (windowProps.width < 300 or windowProps.height < 300) {
+        //     std.log.err("Invalid screen size", .{});
+        //     std.process.exit(1);
+        // }
 
         // Handle glfw callbacks
         glfw.setErrorCallback(errorCallback);
@@ -25,9 +33,9 @@ pub const Engine = struct {
 
         // Create a window
         const window = glfw.Window.create(
-            screenWidth,
-            screenHeight,
-            "Zorion Engine",
+            windowProps.width,
+            windowProps.height,
+            windowProps.title,
             null,
             null,
             .{},
@@ -42,6 +50,8 @@ pub const Engine = struct {
         const proc: glfw.GLProc = undefined;
         try gl.load(proc, glGetProcAddress);
 
+        self.camera.screenWidth = windowProps.width;
+        self.camera.screenHeight = windowProps.height;
         self.camera.UpdateProjection();
 
         return self.window;
@@ -71,18 +81,22 @@ pub const Camera3D = struct {
     view: math.Mat4x4 = math.Mat4x4.ident,
 
     fov: f32 = 80,
-    aspect: f32 = 16.0 / 9.0,
     near: f32 = -1 + 0.1,
     far: f32 = 10_000,
+
+    screenWidth: u32 = undefined,
+    screenHeight: u32 = undefined,
 
     const Self = @This();
 
     pub fn UpdateProjection(
         self: *Self,
     ) void {
+        const aspect: f32 = @as(f32, @floatFromInt(self.screenWidth)) / @as(f32, @floatFromInt(self.screenHeight));
+
         self.projection = math.Mat4x4.perspective(
             math.degreesToRadians(self.fov),
-            self.aspect,
+            aspect,
             self.near,
             self.far,
         );
