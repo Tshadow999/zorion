@@ -44,7 +44,7 @@ pub fn main() !void {
         .vertexSource = @embedFile("Assets/vert.glsl"),
     };
 
-    shader.compile();
+    try shader.compile();
     defer shader.deinit();
 
     // Contruct Square position
@@ -137,14 +137,9 @@ pub fn main() !void {
         // Update Shader uniforms
         shader.bind();
 
-        var uniformLocation = shader.getUniformLocation("offset");
-        Shader.setUniform(uniformLocation, motion);
-
-        uniformLocation = shader.getUniformLocation("projection");
-        Shader.setUniform(uniformLocation, engine.camera.projection);
-
-        uniformLocation = shader.getUniformLocation("view");
-        Shader.setUniform(uniformLocation, engine.camera.view);
+        try shader.setUniformByName("offset", motion);
+        try shader.setUniformByName("projection", engine.camera.projection);
+        try shader.setUniformByName("view", engine.camera.view);
 
         // Create the flat triangle and cube meshes
         triangle.bind();

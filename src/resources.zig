@@ -62,6 +62,12 @@ pub const Shader = struct {
     vertexSource: []const u8,
     fragmentSource: []const u8,
 
+    const Error = error{
+        InvalidUniformName,
+        InvalidVertexShader,
+        InvalidFragmentShader,
+    };
+
     const Self = @This();
 
     pub fn load(self: *Self, vertexPath: []u8, fragmentPath: []u8) void {
@@ -74,16 +80,16 @@ pub const Shader = struct {
         gl.useProgram(self.program);
     }
 
-    pub fn compile(self: *Self) void {
+    pub fn compile(self: *Self) !void {
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertShader, 1, &self.vertexSource.ptr, null);
         gl.compileShader(vertShader);
-        checkShaderCompileStatus(vertShader, "VERTEX");
+        try checkShaderCompileStatus(vertShader, true);
 
         const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragShader, 1, &self.fragmentSource.ptr, null);
         gl.compileShader(fragShader);
-        checkShaderCompileStatus(fragShader, "FRAGMENT");
+        try checkShaderCompileStatus(fragShader, false);
 
         self.program = gl.createProgram();
         gl.attachShader(self.program, vertShader);
@@ -95,20 +101,26 @@ pub const Shader = struct {
         gl.deleteShader(fragShader);
     }
 
-    fn checkShaderCompileStatus(shader: u32, shaderType: []const u8) void {
-        var status: i32 = 0;
-        gl.getShaderiv(shader, gl.COMPILE_STATUS, &status);
-        if (status == gl.FALSE) {
-            var logLength: i32 = 0;
-            gl.getShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength);
+    fn checkShaderCompileStatus(shader: u32, isVertexShader: bool) !void {
+        var isCompiled: i32 = 0;
+        gl.getShaderiv(shader, gl.COMPILE_STATUS, &isCompiled);
+        if (isCompiled == gl.FALSE) {
+            var maxLength: i32 = 0;
+            gl.getShaderiv(shader, gl.INFO_LOG_LENGTH, &maxLength);
 
-            var log = std.ArrayList(u8).init(std.heap.page_allocator);
-            defer log.deinit();
-            // try log.ensureTotalCapacity(@intCast(logLength));
-            gl.getShaderInfoLog(shader, logLength, null, log.items.ptr);
+            const errorLogSize: usize = 512;
+            var log = [1:0]u8{0} ** errorLogSize;
+            gl.getShaderInfoLog(shader, errorLogSize, &maxLength, &log);
 
-            std.log.err("{s} Shader compile error: {s}", .{ shaderType, log.items });
-            std.process.exit(1);
+            gl.deleteShader(shader);
+
+            if (isVertexShader) {
+                std.log.err("VERTEX SHADER\n{s}", .{log[0..@intCast(maxLength)]});
+                return Error.InvalidVertexShader;
+            } else {
+                std.log.err("FRAGMENT SHADER\n{s}", .{log[0..@intCast(maxLength)]});
+                return Error.InvalidFragmentShader;
+            }
         }
     }
 
@@ -117,9 +129,12 @@ pub const Shader = struct {
     }
 
     // Shader uniforms:
-
-    pub fn getUniformLocation(self: *Self, name: []const u8) i32 {
-        return gl.getUniformLocation(self.program, name.ptr);
+    pub fn setUniformByName(self: *Self, name: []const u8, uniform: anytype) !void {
+        const location = gl.getUniformLocation(self.program, name.ptr);
+        if (location == -1) {
+            return Error.InvalidUniformName;
+        }
+        setUniform(location, uniform);
     }
 
     // TODO add more types
