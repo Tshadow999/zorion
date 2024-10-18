@@ -96,7 +96,7 @@ pub fn main() !void {
 
     // var motion = math.vec3(0, 0, 0);
 
-    var camOffset = math.vec3(0.0, 0.0, 3);
+    var camOffset = math.vec3(0.0, 0.0, 5);
 
     while (engine.isRunning()) {
         engine.render();

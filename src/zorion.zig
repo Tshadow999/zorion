@@ -87,8 +87,9 @@ pub const Camera3D = struct {
     view: math.Mat4x4 = math.Mat4x4.ident,
 
     fov: f32 = 80,
-    near: f32 = -1 + 0.1,
-    far: f32 = 10_000,
+    // Projection fixed now?
+    near: f32 = -1,
+    far: f32 = 1,
 
     screenWidth: u32 = undefined,
     screenHeight: u32 = undefined,
