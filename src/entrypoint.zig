@@ -15,29 +15,9 @@ pub fn main() !void {
 
     defer engine.deinit();
 
-    // Contruct triangle position
-    const verts = [_]f32{
-        -0.5, -0.5, 0.0,
-        0.5,  -0.5, 0.0,
-        0.0,  0.5,  0.0,
-    };
-
-    // Indices
-    const indices = [_]u32{
-        0, 1, 2,
-    };
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const alloc = gpa.allocator();
-
-    var triangle = Mesh.init(alloc);
-
-    try triangle.vertices.appendSlice(&verts);
-    try triangle.indices.appendSlice(&indices);
-
-    triangle.create();
-    defer triangle.deinit();
 
     var shader = Shader{
         .fragmentSource = @embedFile("Assets/frag.glsl"),
@@ -48,15 +28,31 @@ pub fn main() !void {
     defer shader.deinit();
 
     // Contruct Square position
-    const squareVerts = [_]f32{
-        0, 0, 0, // 0
-        1, 0, 0, // 1
-        1, 1, 0, // 2
-        0, 1, 0, // 3
-        0, 0, 1, // 4
-        1, 0, 1, // 5
-        1, 1, 1, // 6
-        0, 1, 1, // 7
+    const squareVerts = [_]resource.Vertex{
+        .{
+            .position = math.vec3(0, 0, 0), // 0
+        },
+        .{
+            .position = math.vec3(1, 0, 0), // 1
+        },
+        .{
+            .position = math.vec3(1, 1, 0), // 2
+        },
+        .{
+            .position = math.vec3(0, 1, 0), // 3
+        },
+        .{
+            .position = math.vec3(0, 0, 1), // 4
+        },
+        .{
+            .position = math.vec3(1, 0, 1), // 5
+        },
+        .{
+            .position = math.vec3(1, 1, 1), // 6
+        },
+        .{
+            .position = math.vec3(0, 1, 1), // 7
+        },
     };
 
     // Indices
@@ -141,8 +137,7 @@ pub fn main() !void {
         try shader.setUniformByName("projection", engine.camera.projection);
         try shader.setUniformByName("view", engine.camera.view);
 
-        // Create the flat triangle and cube meshes
-        triangle.bind();
+        // Create the cube meshe
         square.bind();
     }
 }

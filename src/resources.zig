@@ -2,8 +2,29 @@ const std = @import("std");
 const gl = @import("gl");
 const math = @import("math");
 
+const AttributeHelper = struct {};
+
+pub const Vertex = extern struct {
+    position: math.Vec3 = math.vec3(0, 0, 0),
+    uv: math.Vec2 = math.vec2(0, 0),
+    normal: math.Vec3 = math.vec3(0, 0, 0),
+    color: math.Vec4 = math.vec4(0, 0, 0, 0),
+
+    pub fn addAtributes() void {
+        Mesh.addElement(0, 3, 0, false); // @offsetOf(Vertex, "position") = 0
+        Mesh.addElement(1, 2, @offsetOf(Vertex, "uv"), false);
+        Mesh.addElement(2, 3, @offsetOf(Vertex, "normal"), false);
+        Mesh.addElement(3, 4, @offsetOf(Vertex, "color"), false);
+
+        // std.log.info("Size of Vec2:{}", .{@sizeOf(math.Vec2)}); // = 8
+        // std.log.info("Size of Vec3:{}", .{@sizeOf(math.Vec3)}); // = 16
+        // std.log.info("Size of Vec4:{}", .{@sizeOf(math.Vec4)}); // = 16
+        // std.log.info("Size of vertex:{}", .{@sizeOf(Vertex)}); // = 64?
+    }
+};
+
 pub const Mesh = struct {
-    vertices: std.ArrayList(f32),
+    vertices: std.ArrayList(Vertex),
     indices: std.ArrayList(u32),
 
     vao: u32 = undefined,
@@ -14,9 +35,27 @@ pub const Mesh = struct {
 
     pub fn init(allocator: std.mem.Allocator) Mesh {
         return .{
-            .vertices = std.ArrayList(f32).init(allocator),
+            .vertices = std.ArrayList(Vertex).init(allocator),
             .indices = std.ArrayList(u32).init(allocator),
         };
+    }
+
+    fn addElement(
+        index: u32,
+        elementCount: i32,
+        elementPosition: u32,
+        normalized: bool,
+    ) void {
+        const glNormalized: gl.GLboolean = if (normalized) gl.TRUE else gl.FALSE;
+        gl.vertexAttribPointer(
+            index,
+            elementCount,
+            gl.FLOAT,
+            glNormalized,
+            @sizeOf(Vertex),
+            @ptrFromInt(elementPosition),
+        );
+        gl.enableVertexAttribArray(index);
     }
 
     pub fn create(self: *Self) void {
@@ -27,10 +66,9 @@ pub const Mesh = struct {
         gl.bindVertexArray(self.vao);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, self.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, @intCast(self.vertices.items.len * @sizeOf(f32)), self.vertices.items[0..].ptr, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, @intCast(self.vertices.items.len * @sizeOf(Vertex)), self.vertices.items[0..].ptr, gl.STATIC_DRAW);
 
-        gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 3 * @sizeOf(f32), null);
-        gl.enableVertexAttribArray(0);
+        Vertex.addAtributes();
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @intCast(self.indices.items.len * @sizeOf(u32)), self.indices.items[0..].ptr, gl.STATIC_DRAW);
