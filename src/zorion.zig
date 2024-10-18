@@ -50,6 +50,12 @@ pub const Engine = struct {
         const proc: glfw.GLProc = undefined;
         try gl.load(proc, glGetProcAddress);
 
+        // One time enables
+        gl.enable(gl.DEPTH_TEST);
+
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+
         self.camera.screenWidth = windowProps.width;
         self.camera.screenHeight = windowProps.height;
         self.camera.UpdateProjection();
@@ -63,7 +69,7 @@ pub const Engine = struct {
         glfw.pollEvents();
 
         gl.clearColor(0.3, 0.1, 0.3, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
 
     pub fn deinit(self: *Self) void {

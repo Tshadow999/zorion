@@ -147,6 +147,7 @@ pub const acos = std.math.acos;
 pub const isNan = std.math.isNan;
 pub const isInf = std.math.isInf;
 pub const pi = std.math.pi;
+pub const tau = std.math.pi * 2;
 pub const clamp = std.math.clamp;
 pub const log10 = std.math.log10;
 pub const degreesToRadians = std.math.degreesToRadians;
