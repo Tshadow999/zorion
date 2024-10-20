@@ -30,70 +30,23 @@ pub fn main() !void {
     try shader.compile();
     defer shader.deinit();
 
-    // Contruct Square position
-    // const squareVerts = [_]resource.Vertex{
-    //     .{
-    //         .position = math.vec3(0, 0, 0), // 0
-    //     },
-    //     .{
-    //         .position = math.vec3(1, 0, 0), // 1
-    //     },
-    //     .{
-    //         .position = math.vec3(1, 1, 0), // 2
-    //     },
-    //     .{
-    //         .position = math.vec3(0, 1, 0), // 3
-    //     },
-    //     .{
-    //         .position = math.vec3(0, 0, 1), // 4
-    //     },
-    //     .{
-    //         .position = math.vec3(1, 0, 1), // 5
-    //     },
-    //     .{
-    //         .position = math.vec3(1, 1, 1), // 6
-    //     },
-    //     .{
-    //         .position = math.vec3(0, 1, 1), // 7
-    //     },
-    // };
+    // Cube
+    var cube: Mesh = Mesh.init(alloc);
+    try primitive.cube(&cube, 3.33);
+    cube.create();
+    defer cube.deinit();
 
-    // // Indices
-    // const squareIndices = [_]u32{
-    //     // front
-    //     0, 1, 2,
-    //     0, 2, 3,
-    //     // back
-    //     4, 5, 6,
-    //     4, 6, 7,
-    //     // left
-    //     4, 0, 3,
-    //     4, 3, 7,
-    //     // right
-    //     1, 5, 6,
-    //     1, 6, 2,
-    //     // top
-    //     3, 2, 6,
-    //     3, 6, 7,
-    //     // bottom
-    //     4, 5, 1,
-    //     4, 1, 0,
-    // };
-
-    // Sphere:
+    // Sphere
     var sphere: Mesh = Mesh.init(alloc);
-    try primitive.sphere(&sphere, 3.0, 64, 64);
-
+    try primitive.sphere(&sphere, 0.1, 64, 64);
     sphere.create();
     defer sphere.deinit();
 
-    // var square = Mesh.init(alloc);
-
-    // try square.vertices.appendSlice(&squareVerts);
-    // try square.indices.appendSlice(&squareIndices);
-
-    // square.create();
-    // defer square.deinit();
+    // Quad
+    var quad: Mesh = Mesh.init(alloc);
+    try primitive.quad(&quad, 1.0, 4.0);
+    quad.create();
+    defer quad.deinit();
 
     var motion = math.vec3(0, 0, 0);
 
@@ -162,10 +115,12 @@ pub fn main() !void {
         try shader.setUniformByName("view", engine.camera.view);
 
         // create the sphere mesh
-        sphere.bind();
+        // sphere.bind();
 
-        // Create the cube mesh
-        // square.bind();
+        // Create cube mesh
+        // cube.bind();
+
+        quad.bind();
 
         input.clearEvents();
     }

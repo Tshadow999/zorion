@@ -35,7 +35,6 @@ pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u
 
         try circlePoints(&verts, vertSegs, ringRadius);
 
-        // vertSegs maybe?
         for (0..radSegs + 1) |i| {
             verts.items[i].v[1] += height;
             try mesh.vertices.append(Vertex{ .position = verts.items[i] });
@@ -61,5 +60,115 @@ pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u
             try mesh.indices.append(@intCast(index3));
             try mesh.indices.append(@intCast(index2));
         }
+    }
+}
+
+pub fn cube(mesh: *Mesh, size: f32) !void {
+    const vertices = [24]Vertex{
+        // Front face
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, 0, 1) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, 0, 1) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 0, 1) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 0, 1) },
+
+        // Back face
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, 0, -1) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, 0, -1) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 0, -1) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 0, -1) },
+
+        // Left face
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(-1, 0, 0) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(-1, 0, 0) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(-1, 0, 0) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(-1, 0, 0) },
+
+        // Right face
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(1, 0, 0) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(1, 0, 0) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(1, 0, 0) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(1, 0, 0) },
+
+        // Top face
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 1, 0) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 1, 0) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 1, 0) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 1, 0) },
+
+        // Bottom face
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, -1, 0) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, -1, 0) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, -1, 0) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, -1, 0) },
+    };
+
+    const indices = [36]u32{
+        // Front face
+        0,  1,  2,
+        0,  2,  3,
+        // Back face
+        4,  6,  5,
+        4,  7,  6,
+        // Left face
+        8,  9,  10,
+        8,  10, 11,
+        // Right face
+        12, 14, 13,
+        12, 15, 14,
+        // Top face
+        16, 17, 18,
+        16, 18, 19,
+        // Bottom face
+        20, 22, 21,
+        20, 23, 22,
+    };
+
+    mesh.vertices.clearRetainingCapacity();
+    mesh.indices.clearRetainingCapacity();
+
+    for (vertices) |vertex| {
+        try mesh.vertices.append(vertex);
+    }
+
+    for (indices) |index| {
+        try mesh.indices.append(index);
+    }
+}
+
+pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
+    // Always forwards for now
+    const squareVerts = [4]Vertex{
+        .{
+            .position = math.vec3(0, 0, 0),
+            .normal = math.vec3(0, 0, 1),
+        },
+        .{
+            .position = math.vec3(width, 0, 0),
+            .normal = math.vec3(0, 0, 1),
+        },
+        .{
+            .position = math.vec3(width, height, 0),
+            .normal = math.vec3(0, 0, 1),
+        },
+        .{
+            .position = math.vec3(0, height, 0),
+            .normal = math.vec3(0, 0, 1),
+        },
+    };
+
+    const squareIndices = [6]u32{
+        0, 1, 2, // Triangle 1
+        0, 2, 3, // Triangle 2
+    };
+
+    mesh.vertices.clearRetainingCapacity();
+    mesh.indices.clearRetainingCapacity();
+
+    for (squareVerts) |vertex| {
+        try mesh.vertices.append(vertex);
+    }
+
+    for (squareIndices) |index| {
+        try mesh.indices.append(index);
     }
 }
