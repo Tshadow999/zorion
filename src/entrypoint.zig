@@ -102,39 +102,49 @@ pub fn main() !void {
     // Wire frame mode!
     gl.polygonMode(gl.FRONT, gl.FILL); // try point line or fill
 
+    window.setKeyCallback(input.keyCallBack);
+    var lineModeToggle = false;
+
+    const camMoveSpeed: f32 = 0.1;
+
     while (engine.isRunning()) {
         engine.render();
 
         // Quick escape
-        if (input.isPressed(.Escape, getKeyState, &window)) {
+        if (input.isJustPressed(.Escape)) {
             window.setShouldClose(true);
         }
 
+        if (input.isJustPressed(.P)) {
+            lineModeToggle = !lineModeToggle;
+            gl.polygonMode(gl.FRONT, if (lineModeToggle) gl.LINE else gl.FILL); // try point line or fill
+        }
+
         // moving camera
-        if (input.isPressed(.S, getKeyState, &window)) {
-            camOffset.v[2] += 0.001;
-        } else if (input.isPressed(.W, getKeyState, &window)) {
-            camOffset.v[2] -= 0.001;
+        if (input.isPressed(.S)) {
+            camOffset.v[2] += camMoveSpeed;
+        } else if (input.isPressed(.W)) {
+            camOffset.v[2] -= camMoveSpeed;
         }
 
-        if (input.isPressed(.A, getKeyState, &window)) {
-            camOffset.v[0] += 0.001;
-        } else if (input.isPressed(.D, getKeyState, &window)) {
-            camOffset.v[0] -= 0.001;
+        if (input.isPressed(.A)) {
+            camOffset.v[0] += camMoveSpeed;
+        } else if (input.isPressed(.D)) {
+            camOffset.v[0] -= camMoveSpeed;
         }
 
-        if (input.isPressed(.Down, getKeyState, &window)) {
-            camOffset.v[1] += 0.001;
-        } else if (input.isPressed(.Up, getKeyState, &window)) {
-            camOffset.v[1] -= 0.001;
+        if (input.isPressed(.Down)) {
+            camOffset.v[1] += camMoveSpeed;
+        } else if (input.isPressed(.Up)) {
+            camOffset.v[1] -= camMoveSpeed;
         }
 
         // Updating camera settings
-        if (input.isPressed(.Q, getKeyState, &window)) {
-            engine.camera.near += 0.001;
+        if (input.isPressed(.Q)) {
+            engine.camera.near += camMoveSpeed;
             engine.camera.UpdateProjection();
-        } else if (input.isPressed(.E, getKeyState, &window)) {
-            engine.camera.near -= 0.001;
+        } else if (input.isPressed(.E)) {
+            engine.camera.near -= camMoveSpeed;
             engine.camera.UpdateProjection();
         }
 
@@ -156,6 +166,8 @@ pub fn main() !void {
 
         // Create the cube mesh
         // square.bind();
+
+        input.clearEvents();
     }
 }
 

@@ -4,6 +4,8 @@ const glfw = @import("mach-glfw");
 const math = @import("math");
 const gl = @import("gl");
 
+const input = @import("input.zig");
+
 pub const WindowProps = struct {
     width: u32 = 1280,
     height: u32 = 720,
@@ -18,11 +20,6 @@ pub const Engine = struct {
     const Self = @This();
 
     pub fn init(self: *Self, windowProps: WindowProps) !glfw.Window {
-        // Not sure if I need this check
-        // if (windowProps.width < 300 or windowProps.height < 300) {
-        //     std.log.err("Invalid screen size", .{});
-        //     std.process.exit(1);
-        // }
 
         // Handle glfw callbacks
         glfw.setErrorCallback(errorCallback);
