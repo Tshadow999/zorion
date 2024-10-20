@@ -1,8 +1,8 @@
 const std = @import("std");
-const glfw = @import("mach-glfw");
-const gl = @import("gl");
 
+const glfw = @import("mach-glfw");
 const math = @import("math");
+const gl = @import("gl");
 
 pub const WindowProps = struct {
     width: u32 = 1280,

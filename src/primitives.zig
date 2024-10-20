@@ -1,7 +1,10 @@
 const std = @import("std");
-const gl = @import("gl");
+
 const math = @import("math");
+const gl = @import("gl");
+
 const resources = @import("resources.zig");
+
 const Mesh = resources.Mesh;
 const Vertex = resources.Vertex;
 

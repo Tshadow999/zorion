@@ -1,6 +1,7 @@
 const std = @import("std");
-const gl = @import("gl");
+
 const math = @import("math");
+const gl = @import("gl");
 
 const AttributeHelper = struct {};
 

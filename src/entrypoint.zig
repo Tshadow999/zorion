@@ -1,15 +1,16 @@
 const std = @import("std");
+
 const glfw = @import("mach-glfw");
+const math = @import("math");
 const gl = @import("gl");
 
+const primitive = @import("primitives.zig");
 const resource = @import("resources.zig");
 const Zorion = @import("zorion.zig");
+const input = @import("input.zig");
+
 const Mesh = resource.Mesh;
 const Shader = resource.Shader;
-
-const primitive = @import("primitives.zig");
-
-const math = @import("math");
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
@@ -81,7 +82,7 @@ pub fn main() !void {
 
     // Sphere:
     var sphere: Mesh = Mesh.init(alloc);
-    try primitive.sphere(&sphere, 3.0, 32, 32);
+    try primitive.sphere(&sphere, 3.0, 64, 64);
 
     sphere.create();
     defer sphere.deinit();
@@ -94,42 +95,45 @@ pub fn main() !void {
     // square.create();
     // defer square.deinit();
 
-    // var motion = math.vec3(0, 0, 0);
+    var motion = math.vec3(0, 0, 0);
 
     var camOffset = math.vec3(0.0, 0.0, 5);
+
+    // Wire frame mode!
+    gl.polygonMode(gl.FRONT, gl.FILL); // try point line or fill
 
     while (engine.isRunning()) {
         engine.render();
 
         // Quick escape
-        if (window.getKey(.escape) == .press) {
+        if (input.isPressed(.Escape, getKeyState, &window)) {
             window.setShouldClose(true);
         }
 
         // moving camera
-        if (window.getKey(.s) == .press) {
+        if (input.isPressed(.S, getKeyState, &window)) {
             camOffset.v[2] += 0.001;
-        } else if (window.getKey(.w) == .press) {
+        } else if (input.isPressed(.W, getKeyState, &window)) {
             camOffset.v[2] -= 0.001;
         }
 
-        if (window.getKey(.a) == .press) {
+        if (input.isPressed(.A, getKeyState, &window)) {
             camOffset.v[0] += 0.001;
-        } else if (window.getKey(.d) == .press) {
+        } else if (input.isPressed(.D, getKeyState, &window)) {
             camOffset.v[0] -= 0.001;
         }
 
-        if (window.getKey(.down) == .press) {
+        if (input.isPressed(.Down, getKeyState, &window)) {
             camOffset.v[1] += 0.001;
-        } else if (window.getKey(.up) == .press) {
+        } else if (input.isPressed(.Up, getKeyState, &window)) {
             camOffset.v[1] -= 0.001;
         }
 
         // Updating camera settings
-        if (window.getKey(.q) == .press) {
+        if (input.isPressed(.Q, getKeyState, &window)) {
             engine.camera.near += 0.001;
             engine.camera.UpdateProjection();
-        } else if (window.getKey(.e) == .press) {
+        } else if (input.isPressed(.E, getKeyState, &window)) {
             engine.camera.near -= 0.001;
             engine.camera.UpdateProjection();
         }
@@ -137,12 +141,13 @@ pub fn main() !void {
         const camOffsetMat = math.Mat4x4.translate(camOffset);
         engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
 
-        // motion.v[0] = @floatCast(@sin(glfw.getTime()));
+        motion.v[0] = @floatCast(@sin(glfw.getTime()));
+        motion.v[1] = @floatCast(@cos(glfw.getTime()));
 
         // Update Shader uniforms
         shader.bind();
 
-        // try shader.setUniformByName("offset", motion);
+        try shader.setUniformByName("offset", motion);
         try shader.setUniformByName("projection", engine.camera.projection);
         try shader.setUniformByName("view", engine.camera.view);
 
@@ -152,4 +157,13 @@ pub fn main() !void {
         // Create the cube mesh
         // square.bind();
     }
+}
+
+fn getKeyState(window: *const glfw.Window, key: input.Key) input.State {
+    const state = window.getKey(input.keyToGlfw(key));
+    return switch (state) {
+        .press => input.State.Press,
+        .release => input.State.Release,
+        else => input.State.None,
+    };
 }
