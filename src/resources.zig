@@ -3,7 +3,41 @@ const std = @import("std");
 const math = @import("math");
 const gl = @import("gl");
 
-const AttributeHelper = struct {};
+pub const Scene = struct {
+    objects: std.BoundedArray(Object, 256),
+
+    pub fn render(self: *Scene) !void {
+        for (self.objects.constSlice()) |object| {
+            try object.render();
+        }
+    }
+
+    pub fn addObject(self: *Scene, mesh: *Mesh, shader: *Shader) !*Object {
+        const object = try self.objects.addOne();
+        object.* = .{ .mesh = mesh, .shader = shader };
+        return object;
+    }
+};
+
+pub const Transform = struct {
+    local2World: math.Mat4x4 = math.Mat4x4.ident,
+};
+
+pub const Object = struct {
+    transform: Transform = .{},
+    mesh: ?*Mesh = null,
+    shader: ?*Shader = null,
+    visible: bool = true,
+
+    pub fn render(self: *const Object) !void {
+        if (!self.visible) return;
+        const mesh = self.mesh orelse return;
+        const shader = self.shader orelse return;
+        mesh.bind();
+        try shader.setUniformByName("model", self.transform.local2World);
+        shader.bind();
+    }
+};
 
 pub const Vertex = extern struct {
     position: math.Vec3 = math.vec3(0, 0, 0),
@@ -32,8 +66,6 @@ pub const Mesh = struct {
     vbo: u32 = undefined,
     ibo: u32 = undefined,
 
-    const Self = @This();
-
     pub fn init(allocator: std.mem.Allocator) Mesh {
         return .{
             .vertices = std.ArrayList(Vertex).init(allocator),
@@ -59,7 +91,7 @@ pub const Mesh = struct {
         gl.enableVertexAttribArray(index);
     }
 
-    pub fn create(self: *Self) void {
+    pub fn create(self: *Mesh) void {
         gl.genVertexArrays(1, &self.vao);
         gl.genBuffers(1, &self.vbo);
         gl.genBuffers(1, &self.ibo);
@@ -79,14 +111,14 @@ pub const Mesh = struct {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0);
     }
 
-    pub fn bind(self: *Self) void {
+    pub fn bind(self: *Mesh) void {
         gl.bindVertexArray(self.vao);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo);
 
         gl.drawElements(gl.TRIANGLES, @intCast(self.indices.items.len), gl.UNSIGNED_INT, null);
     }
 
-    pub fn deinit(self: *Self) void {
+    pub fn deinit(self: *Mesh) void {
         gl.deleteVertexArrays(1, &self.vao);
         gl.deleteBuffers(1, &self.vbo);
         gl.deleteBuffers(1, &self.ibo);
@@ -107,19 +139,17 @@ pub const Shader = struct {
         InvalidFragmentShader,
     };
 
-    const Self = @This();
-
-    pub fn load(self: *Self, vertexPath: []u8, fragmentPath: []u8) void {
+    pub fn load(self: *Shader, vertexPath: []u8, fragmentPath: []u8) void {
         _ = self;
         _ = vertexPath;
         _ = fragmentPath;
     }
 
-    pub fn bind(self: *Self) void {
+    pub fn bind(self: *Shader) void {
         gl.useProgram(self.program);
     }
 
-    pub fn compile(self: *Self) !void {
+    pub fn compile(self: *Shader) !void {
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertShader, 1, &self.vertexSource.ptr, null);
         gl.compileShader(vertShader);
@@ -163,12 +193,12 @@ pub const Shader = struct {
         }
     }
 
-    pub fn deinit(self: *Self) void {
+    pub fn deinit(self: *Shader) void {
         gl.deleteProgram(self.program);
     }
 
     // Shader uniforms:
-    pub fn setUniformByName(self: *Self, name: []const u8, uniform: anytype) !void {
+    pub fn setUniformByName(self: *Shader, name: []const u8, uniform: anytype) !void {
         const location = gl.getUniformLocation(self.program, name.ptr);
         if (location == -1) {
             return Error.InvalidUniformName;
@@ -177,7 +207,7 @@ pub const Shader = struct {
     }
 
     // TODO add more types
-    pub fn setUniform(location: i32, uniform: anytype) void {
+    fn setUniform(location: i32, uniform: anytype) void {
         switch (@TypeOf(uniform)) {
             i32 => gl.uniform1i(location, uniform),
             u32 => gl.uniform1ui(location, uniform),

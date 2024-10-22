@@ -11,8 +11,7 @@ const input = @import("input.zig");
 
 const Mesh = resource.Mesh;
 const Shader = resource.Shader;
-
-// Video: 6:39:00
+const Object = resource.Object;
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
@@ -54,13 +53,14 @@ pub fn main() !void {
 
     var camOffset = math.vec3(0.0, 0.0, 5);
 
-    // Wire frame mode!
-    gl.polygonMode(gl.FRONT, gl.FILL); // try point line or fill
-
     window.setKeyCallback(input.keyCallBack);
     var lineModeToggle = false;
 
-    const camMoveSpeed: f32 = 0.1;
+    const camMoveSpeed: f32 = 0.01;
+
+    try engine.createScene();
+    const cubeObj: *Object = try engine.scene.?.addObject(&cube, &shader);
+    const sphereObj: *Object = try engine.scene.?.addObject(&sphere, &shader);
 
     while (engine.isRunning()) {
         engine.render();
@@ -109,20 +109,15 @@ pub fn main() !void {
         motion.v[0] = @floatCast(@sin(glfw.getTime()));
         motion.v[1] = @floatCast(@cos(glfw.getTime()));
 
-        // Update Shader uniforms
-        shader.bind();
+        const modelOffset = math.Mat4x4.translate(motion);
 
-        try shader.setUniformByName("offset", motion);
+        // Update Shader uniforms
         try shader.setUniformByName("projection", engine.camera.projection);
         try shader.setUniformByName("view", engine.camera.view);
 
-        // create the sphere mesh
-        sphere.bind();
-
-        // Create cube mesh
-        cube.bind();
-
-        // quad.bind();
+        cubeObj.transform.local2World = math.Mat4x4.ident.mul(&modelOffset);
+        sphereObj.transform.local2World = math.Mat4x4.ident;
+        try engine.scene.?.render();
 
         input.clearEvents();
     }

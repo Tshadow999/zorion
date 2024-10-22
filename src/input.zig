@@ -10,7 +10,7 @@ const Event = struct {
     mods: glfw.Mods,
 };
 
-var keyEvents: std.BoundedArray(Event, 16) = std.BoundedArray(Event, 16).init(0) catch unreachable;
+var keyEvents: std.BoundedArray(Event, 16) = std.BoundedArray(Event, 16){};
 
 fn getKeyState(window: *const glfw.Window, key: Key) State {
     const state = window.getKey(keyToGlfw(key));

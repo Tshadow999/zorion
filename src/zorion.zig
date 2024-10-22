@@ -5,7 +5,8 @@ const math = @import("math");
 const gl = @import("gl");
 
 const input = @import("input.zig");
-
+const resource = @import("resources.zig");
+const Scene = resource.Scene;
 pub const WindowProps = struct {
     width: u32 = 1280,
     height: u32 = 720,
@@ -16,10 +17,9 @@ pub const WindowProps = struct {
 pub const Engine = struct {
     window: glfw.Window = undefined,
     camera: Camera3D = .{},
+    scene: ?Scene = null,
 
-    const Self = @This();
-
-    pub fn init(self: *Self, windowProps: WindowProps) !glfw.Window {
+    pub fn init(self: *Engine, windowProps: WindowProps) !glfw.Window {
 
         // Handle glfw callbacks
         glfw.setErrorCallback(errorCallback);
@@ -53,6 +53,8 @@ pub const Engine = struct {
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
 
+        gl.polygonMode(gl.FRONT, gl.FILL); // Possible modes: point, line or fill
+
         self.camera.screenWidth = windowProps.width;
         self.camera.screenHeight = windowProps.height;
         self.camera.UpdateProjection();
@@ -60,7 +62,7 @@ pub const Engine = struct {
         return self.window;
     }
 
-    pub fn render(self: *Self) void {
+    pub fn render(self: *Engine) void {
         self.window.swapBuffers();
 
         glfw.pollEvents();
@@ -69,13 +71,17 @@ pub const Engine = struct {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
 
-    pub fn deinit(self: *Self) void {
-        self.window.destroy();
-        glfw.terminate();
+    pub fn isRunning(self: *Engine) bool {
+        return !self.window.shouldClose();
     }
 
-    pub fn isRunning(self: *Self) bool {
-        return !self.window.shouldClose();
+    pub fn createScene(self: *Engine) !void {
+        self.scene = .{ .objects = .{} };
+    }
+
+    pub fn deinit(self: *Engine) void {
+        self.window.destroy();
+        glfw.terminate();
     }
 };
 
@@ -91,10 +97,8 @@ pub const Camera3D = struct {
     screenWidth: u32 = undefined,
     screenHeight: u32 = undefined,
 
-    const Self = @This();
-
     pub fn UpdateProjection(
-        self: *Self,
+        self: *Camera3D,
     ) void {
         const aspect: f32 = @as(f32, @floatFromInt(self.screenWidth)) / @as(f32, @floatFromInt(self.screenHeight));
 
