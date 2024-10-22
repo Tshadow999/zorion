@@ -15,7 +15,7 @@ const Object = resource.Object;
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
-    const window = try engine.init(.{ .fullscreen = true });
+    const window = try engine.init(.{ .fullscreen = false });
 
     defer engine.deinit();
 
@@ -31,7 +31,6 @@ pub fn main() !void {
     try shader.compile();
     defer shader.deinit();
 
-    // Sphere
     var sphere: Mesh = Mesh.init(alloc);
     try primitive.sphere(&sphere, 1, 64, 64);
     sphere.create();
