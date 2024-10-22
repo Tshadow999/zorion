@@ -15,7 +15,7 @@ const Object = resource.Object;
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
-    const window = try engine.init(.{});
+    const window = try engine.init(.{ .fullscreen = true });
 
     defer engine.deinit();
 
@@ -48,7 +48,7 @@ pub fn main() !void {
 
     try engine.createScene();
 
-    for (0..100) |i| {
+    for (0..500) |i| {
         _ = i;
         _ = try engine.scene.?.addObject(&sphere, &shader);
     }
@@ -106,19 +106,16 @@ pub fn main() !void {
         try shader.setUniformByName("projection", engine.camera.projection);
         try shader.setUniformByName("view", engine.camera.view);
 
-        std.log.info("engine.scene.?.objects.len:{d}", .{engine.scene.?.objects.len});
-
         for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
             const position = math.Mat4x4.translate(math.vec3(
-                2.0 * @as(f32, @floatFromInt(@mod(i, 10))),
+                2.0 * @as(f32, @floatFromInt(@mod(i, 25))),
                 0,
-                2.0 * @as(f32, @floatFromInt(i)) / 10.0,
+                2.0 * @as(f32, @floatFromInt(i)) / 25.0,
             ));
             object.transform.local2World = math.Mat4x4.ident.mul(&position);
             object.transform.local2World = math.Mat4x4.mul(&object.transform.local2World, &modelOffset);
         }
 
-        // sphereObj.transform.local2World = ;
         try engine.scene.?.render();
 
         input.clearEvents();

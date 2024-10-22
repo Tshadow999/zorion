@@ -7,11 +7,13 @@ const gl = @import("gl");
 const input = @import("input.zig");
 const resource = @import("resources.zig");
 const Scene = resource.Scene;
+
 pub const WindowProps = struct {
     width: u32 = 1280,
     height: u32 = 720,
     title: [:0]const u8 = "Zorion Engine",
     vsync: bool = true,
+    fullscreen: bool = true,
 };
 
 pub const Engine = struct {
@@ -28,14 +30,28 @@ pub const Engine = struct {
             std.process.exit(1);
         }
 
+        // Full screen check
+        const monitor: glfw.Monitor = glfw.Monitor.getPrimary() orelse unreachable;
+        const mode = monitor.getVideoMode() orelse unreachable;
+
+        const width = if (windowProps.fullscreen) mode.getWidth() else windowProps.width;
+        const height = if (windowProps.fullscreen) mode.getHeight() else windowProps.height;
+
+        const windowHints: glfw.Window.Hints = if (windowProps.fullscreen) .{
+            .red_bits = @intCast(mode.getRedBits()),
+            .green_bits = @intCast(mode.getGreenBits()),
+            .blue_bits = @intCast(mode.getBlueBits()),
+            .refresh_rate = @intCast(mode.getRefreshRate()),
+        } else .{};
+
         // Create a window
         const window = glfw.Window.create(
-            windowProps.width,
-            windowProps.height,
+            width,
+            height,
             windowProps.title,
+            if (windowProps.fullscreen) monitor else null,
             null,
-            null,
-            .{},
+            windowHints,
         ) orelse {
             std.log.err("Failed to create GLFW window: {?s}", .{glfw.getErrorString()});
             std.process.exit(1);

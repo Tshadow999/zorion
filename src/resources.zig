@@ -4,7 +4,7 @@ const math = @import("math");
 const gl = @import("gl");
 
 pub const Scene = struct {
-    objects: std.BoundedArray(Object, 256),
+    objects: std.BoundedArray(Object, 1024),
 
     pub fn render(self: *Scene) !void {
         for (self.objects.constSlice()) |object| {
