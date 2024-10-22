@@ -12,6 +12,15 @@ const Event = struct {
 
 var keyEvents: std.BoundedArray(Event, 16) = std.BoundedArray(Event, 16).init(0) catch unreachable;
 
+fn getKeyState(window: *const glfw.Window, key: Key) State {
+    const state = window.getKey(keyToGlfw(key));
+    return switch (state) {
+        .press => .Press,
+        .repeat => .Hold,
+        .release => .Release,
+    };
+}
+
 pub fn keyCallBack(window: glfw.Window, key: glfw.Key, scancode: i32, action: glfw.Action, mods: glfw.Mods) void {
     keyEvents.append(.{
         .key = key,
@@ -115,13 +124,8 @@ pub fn keyToGlfw(key: Key) glfw.Key {
     };
 }
 
-pub fn isPressed(key: Key) bool {
-    for (keyEvents.constSlice()) |event| {
-        if (event.key == keyToGlfw(key) and (event.action == .press or event.action == .repeat)) {
-            return true;
-        }
-    }
-    return false;
+pub fn isPressed(window: *const glfw.Window, key: Key) bool {
+    return getKeyState(window, key) == .Press;
 }
 
 pub fn isJustPressed(key: Key) bool {

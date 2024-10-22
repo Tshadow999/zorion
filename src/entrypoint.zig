@@ -12,6 +12,8 @@ const input = @import("input.zig");
 const Mesh = resource.Mesh;
 const Shader = resource.Shader;
 
+// Video: 6:39:00
+
 pub fn main() !void {
     var engine = Zorion.Engine{};
     const window = try engine.init(.{});
@@ -38,7 +40,7 @@ pub fn main() !void {
 
     // Sphere
     var sphere: Mesh = Mesh.init(alloc);
-    try primitive.sphere(&sphere, 0.1, 64, 64);
+    try primitive.sphere(&sphere, 1.5, 64, 64);
     sphere.create();
     defer sphere.deinit();
 
@@ -74,29 +76,29 @@ pub fn main() !void {
         }
 
         // moving camera
-        if (input.isPressed(.S)) {
+        if (input.isPressed(&window, .S)) {
             camOffset.v[2] += camMoveSpeed;
-        } else if (input.isPressed(.W)) {
+        } else if (input.isPressed(&window, .W)) {
             camOffset.v[2] -= camMoveSpeed;
         }
 
-        if (input.isPressed(.A)) {
+        if (input.isPressed(&window, .A)) {
             camOffset.v[0] += camMoveSpeed;
-        } else if (input.isPressed(.D)) {
+        } else if (input.isPressed(&window, .D)) {
             camOffset.v[0] -= camMoveSpeed;
         }
 
-        if (input.isPressed(.Down)) {
+        if (input.isPressed(&window, .Down)) {
             camOffset.v[1] += camMoveSpeed;
-        } else if (input.isPressed(.Up)) {
+        } else if (input.isPressed(&window, .Up)) {
             camOffset.v[1] -= camMoveSpeed;
         }
 
         // Updating camera settings
-        if (input.isPressed(.Q)) {
+        if (input.isPressed(&window, .Q)) {
             engine.camera.near += camMoveSpeed;
             engine.camera.UpdateProjection();
-        } else if (input.isPressed(.E)) {
+        } else if (input.isPressed(&window, .E)) {
             engine.camera.near -= camMoveSpeed;
             engine.camera.UpdateProjection();
         }
@@ -115,22 +117,13 @@ pub fn main() !void {
         try shader.setUniformByName("view", engine.camera.view);
 
         // create the sphere mesh
-        // sphere.bind();
+        sphere.bind();
 
         // Create cube mesh
-        // cube.bind();
+        cube.bind();
 
-        quad.bind();
+        // quad.bind();
 
         input.clearEvents();
     }
-}
-
-fn getKeyState(window: *const glfw.Window, key: input.Key) input.State {
-    const state = window.getKey(input.keyToGlfw(key));
-    return switch (state) {
-        .press => input.State.Press,
-        .release => input.State.Release,
-        else => input.State.None,
-    };
 }
