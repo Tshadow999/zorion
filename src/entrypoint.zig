@@ -31,23 +31,11 @@ pub fn main() !void {
     try shader.compile();
     defer shader.deinit();
 
-    // Cube
-    var cube: Mesh = Mesh.init(alloc);
-    try primitive.cube(&cube, 3.33);
-    cube.create();
-    defer cube.deinit();
-
     // Sphere
     var sphere: Mesh = Mesh.init(alloc);
-    try primitive.sphere(&sphere, 1.5, 64, 64);
+    try primitive.sphere(&sphere, 1, 64, 64);
     sphere.create();
     defer sphere.deinit();
-
-    // Quad
-    var quad: Mesh = Mesh.init(alloc);
-    try primitive.quad(&quad, 1.0, 4.0);
-    quad.create();
-    defer quad.deinit();
 
     var motion = math.vec3(0, 0, 0);
 
@@ -59,8 +47,11 @@ pub fn main() !void {
     const camMoveSpeed: f32 = 0.01;
 
     try engine.createScene();
-    const cubeObj: *Object = try engine.scene.?.addObject(&cube, &shader);
-    const sphereObj: *Object = try engine.scene.?.addObject(&sphere, &shader);
+
+    for (0..100) |i| {
+        _ = i;
+        _ = try engine.scene.?.addObject(&sphere, &shader);
+    }
 
     while (engine.isRunning()) {
         engine.render();
@@ -115,8 +106,19 @@ pub fn main() !void {
         try shader.setUniformByName("projection", engine.camera.projection);
         try shader.setUniformByName("view", engine.camera.view);
 
-        cubeObj.transform.local2World = math.Mat4x4.ident.mul(&modelOffset);
-        sphereObj.transform.local2World = math.Mat4x4.ident;
+        std.log.info("engine.scene.?.objects.len:{d}", .{engine.scene.?.objects.len});
+
+        for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
+            const position = math.Mat4x4.translate(math.vec3(
+                2.0 * @as(f32, @floatFromInt(@mod(i, 10))),
+                0,
+                2.0 * @as(f32, @floatFromInt(i)) / 10.0,
+            ));
+            object.transform.local2World = math.Mat4x4.ident.mul(&position);
+            object.transform.local2World = math.Mat4x4.mul(&object.transform.local2World, &modelOffset);
+        }
+
+        // sphereObj.transform.local2World = ;
         try engine.scene.?.render();
 
         input.clearEvents();
