@@ -4,8 +4,11 @@ const glfw = @import("mach-glfw");
 const math = @import("math");
 const gl = @import("gl");
 
+const c = @import("c.zig");
+
 const primitive = @import("primitives.zig");
 const resource = @import("resources.zig");
+const color = @import("color.zig");
 const Zorion = @import("zorion.zig");
 const input = @import("input.zig");
 
@@ -36,6 +39,11 @@ pub fn main() !void {
     sphere.create();
     defer sphere.deinit();
 
+    var quad: Mesh = Mesh.init(alloc);
+    try primitive.quad(&quad, 1.0, 1.0);
+    quad.create();
+    defer quad.deinit();
+
     var motion = math.vec3(0, 0, 0);
 
     var camOffset = math.vec3(0.0, 0.0, 5);
@@ -45,11 +53,41 @@ pub fn main() !void {
 
     const camMoveSpeed: f32 = 0.01;
 
+    var width: c_int = undefined;
+    var height: c_int = undefined;
+    var channels: c_int = undefined;
+
+    const buffer = c.stbi_load("src/Assets/wall.jpg", &width, &height, &channels, 0);
+    defer c.stbi_image_free(buffer);
+    //std.log.info("width:{}\t height:{}\t channels:{}\n", .{ width, height, channels });cl
+
+    var textureId: u32 = undefined;
+    gl.genTextures(1, &textureId);
+    gl.bindTexture(gl.TEXTURE_2D, textureId);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); // or gl.CLAMP_TO_EDGE
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        if (channels == 4) gl.RGBA8 else gl.RGBA,
+        width,
+        height,
+        0,
+        if (channels == 4) gl.RGB8 else gl.RGB,
+        gl.UNSIGNED_BYTE,
+        buffer,
+    );
+
     try engine.createScene();
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(&sphere, &shader);
+        _ = try engine.scene.?.addObject(&quad, &shader);
     }
 
     while (engine.isRunning()) {
@@ -102,8 +140,10 @@ pub fn main() !void {
         const modelOffset = math.Mat4x4.translate(motion);
 
         // Update Shader uniforms
-        try shader.setUniformByName("projection", engine.camera.projection);
-        try shader.setUniformByName("view", engine.camera.view);
+        try shader.setUniformByName("u_projection", engine.camera.projection);
+        try shader.setUniformByName("u_view", engine.camera.view);
+        try shader.setUniformByName("u_tint", color.lime.toVec4());
+        // try shader.setUniformByName("u_texture", @as(i32, @intCast(textureId)));
 
         for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
             const position = math.Mat4x4.translate(math.vec3(

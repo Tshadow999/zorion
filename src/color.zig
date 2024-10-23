@@ -60,6 +60,7 @@ pub fn from255(self: Color) Color {
     };
 }
 
+// TODO add more
 pub const white = init(1.0, 1.0, 1.0, 1.0);
 pub const black = init(0.0, 0.0, 0.0, 1.0);
 pub const clear = init(0.0, 0.0, 0.0, 0.0);
@@ -68,4 +69,14 @@ pub const red = init(1.0, 0.0, 0.0, 1.0);
 pub const green = init(0.0, 1.0, 0.0, 1.0);
 pub const blue = init(0.0, 0.0, 1.0, 1.0);
 
-// TODO add more
+pub const yellow = init(1.0, 1.0, 0.0, 1.0);
+pub const cyan = init(0.0, 1.0, 1.0, 1.0);
+pub const magenta = init(1.0, 0.0, 1.0, 1.0);
+
+pub const orange = init(1.0, 0.5, 0.0, 1.0);
+pub const chartreuse = init(0.5, 1.0, 0.0, 1.0);
+pub const lime = init(0.0, 1.0, 0.5, 1.0);
+
+pub const azure = init(0.0, 0.5, 1.0, 1.0);
+pub const violet = init(0.5, 0.0, 1.0, 1.0);
+pub const rose = init(1.0, 0.0, 0.5, 1.0);

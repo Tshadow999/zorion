@@ -76,7 +76,7 @@ fn addDependencies(
 
     // Include C
     exe.linkLibC();
-    // exe.addCSourceFile(.{ .file = b.path("deps/stb_image.c"), .flags = &.{} });
+    exe.addCSourceFile(.{ .file = b.path("deps/stb_image.c"), .flags = &.{} });
     // exe.addCSourceFile(.{ .file = b.path("deps/cgltf.c"), .flags = &.{} });
 
     exe.addIncludePath(b.path("deps"));

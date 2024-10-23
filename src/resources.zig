@@ -34,7 +34,7 @@ pub const Object = struct {
         const mesh = self.mesh orelse return;
         const shader = self.shader orelse return;
         mesh.bind();
-        try shader.setUniformByName("model", self.transform.local2World);
+        try shader.setUniformByName("u_model", self.transform.local2World);
         shader.bind();
     }
 };

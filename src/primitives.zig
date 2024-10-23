@@ -136,23 +136,30 @@ pub fn cube(mesh: *Mesh, size: f32) !void {
 }
 
 pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
+    mesh.vertices.clearRetainingCapacity();
+    mesh.indices.clearRetainingCapacity();
+
     // Always forwards for now
     const squareVerts = [4]Vertex{
         .{
             .position = math.vec3(0, 0, 0),
             .normal = math.vec3(0, 0, 1),
+            .uv = math.vec2(0, 0),
         },
         .{
             .position = math.vec3(width, 0, 0),
             .normal = math.vec3(0, 0, 1),
+            .uv = math.vec2(1.0, 0),
         },
         .{
             .position = math.vec3(width, height, 0),
             .normal = math.vec3(0, 0, 1),
+            .uv = math.vec2(1.0, 1.0),
         },
         .{
             .position = math.vec3(0, height, 0),
             .normal = math.vec3(0, 0, 1),
+            .uv = math.vec2(0, 1.0),
         },
     };
 
@@ -161,14 +168,6 @@ pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
         0, 2, 3, // Triangle 2
     };
 
-    mesh.vertices.clearRetainingCapacity();
-    mesh.indices.clearRetainingCapacity();
-
-    for (squareVerts) |vertex| {
-        try mesh.vertices.append(vertex);
-    }
-
-    for (squareIndices) |index| {
-        try mesh.indices.append(index);
-    }
+    try mesh.vertices.appendSlice(&squareVerts);
+    try mesh.indices.appendSlice(&squareIndices);
 }
