@@ -4,8 +4,6 @@ const glfw = @import("mach-glfw");
 const math = @import("math");
 const gl = @import("gl");
 
-const c = @import("c.zig");
-
 const primitive = @import("primitives.zig");
 const resource = @import("resources.zig");
 const color = @import("color.zig");
@@ -15,6 +13,7 @@ const input = @import("input.zig");
 const Mesh = resource.Mesh;
 const Shader = resource.Shader;
 const Object = resource.Object;
+const Texture = resource.Texture;
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
@@ -51,47 +50,50 @@ pub fn main() !void {
     window.setKeyCallback(input.keyCallBack);
     var lineModeToggle = false;
 
-    const camMoveSpeed: f32 = 0.01;
+    const camMoveSpeed: f32 = 10;
 
-    var width: c_int = undefined;
-    var height: c_int = undefined;
-    var channels: c_int = undefined;
-
-    const buffer = c.stbi_load("src/Assets/wall.jpg", &width, &height, &channels, 0);
-    defer c.stbi_image_free(buffer);
     //std.log.info("width:{}\t height:{}\t channels:{}\n", .{ width, height, channels });cl
 
-    var textureId: u32 = undefined;
-    gl.genTextures(1, &textureId);
-    gl.bindTexture(gl.TEXTURE_2D, textureId);
+    engine.createScene();
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    var wallTexture = try Texture.load("src/Assets/wall.jpg");
+    defer wallTexture.deinit();
+    wallTexture.create();
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); // or gl.CLAMP_TO_EDGE
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    var wallMat = resource.Material{ .shader = &shader };
+    try wallMat.properties.append(.{ .name = "u_tint", .data = .{ .vec4 = color.lime.toVec4() } });
+    // try wallMat.properties.append(.{ .name = "u_texture", .data = .{ .texture = &wallTexture } });
 
-    gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        if (channels == 4) gl.RGBA8 else gl.RGBA,
-        width,
-        height,
-        0,
-        if (channels == 4) gl.RGB8 else gl.RGB,
-        gl.UNSIGNED_BYTE,
-        buffer,
-    );
+    var prototypeTexture = try Texture.load("src/Assets/prototype.png");
+    defer prototypeTexture.deinit();
+    prototypeTexture.create();
 
-    try engine.createScene();
+    var prototypeMat = resource.Material{ .shader = &shader };
+    try prototypeMat.properties.append(.{ .name = "u_tint", .data = .{ .vec4 = color.yellow.toVec4() } });
+    // try prototypeMat.properties.append(.{ .name = "u_texture", .data = .{ .texture = &prototypeTexture } });
+
+    // var sphere1 = try engine.scene.?.addObject(&sphere, &wallMat);
+    // var sphere2 = try engine.scene.?.addObject(&sphere, &prototypeMat);
+
+    var pcg = std.rand.Pcg.init(456);
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(&quad, &shader);
+        _ = try engine.scene.?.addObject(&quad, &prototypeMat);
+        if (pcg.random().boolean()) {
+            _ = try engine.scene.?.addObject(&quad, &prototypeMat);
+        } else {
+            _ = try engine.scene.?.addObject(&quad, &wallMat);
+        }
     }
+
+    var lastFrameTime = glfw.getTime();
 
     while (engine.isRunning()) {
         engine.render();
+
+        const delta: f32 = @floatCast(glfw.getTime() - lastFrameTime);
+        lastFrameTime = glfw.getTime();
 
         // Quick escape
         if (input.isJustPressed(.Escape)) {
@@ -105,29 +107,29 @@ pub fn main() !void {
 
         // moving camera
         if (input.isPressed(&window, .S)) {
-            camOffset.v[2] += camMoveSpeed;
+            camOffset.v[2] += camMoveSpeed * delta;
         } else if (input.isPressed(&window, .W)) {
-            camOffset.v[2] -= camMoveSpeed;
+            camOffset.v[2] -= camMoveSpeed * delta;
         }
 
         if (input.isPressed(&window, .A)) {
-            camOffset.v[0] += camMoveSpeed;
+            camOffset.v[0] += camMoveSpeed * delta;
         } else if (input.isPressed(&window, .D)) {
-            camOffset.v[0] -= camMoveSpeed;
+            camOffset.v[0] -= camMoveSpeed * delta;
         }
 
         if (input.isPressed(&window, .Down)) {
-            camOffset.v[1] += camMoveSpeed;
+            camOffset.v[1] += camMoveSpeed * delta;
         } else if (input.isPressed(&window, .Up)) {
-            camOffset.v[1] -= camMoveSpeed;
+            camOffset.v[1] -= camMoveSpeed * delta;
         }
 
         // Updating camera settings
         if (input.isPressed(&window, .Q)) {
-            engine.camera.near += camMoveSpeed;
+            engine.camera.near += camMoveSpeed * delta * 0.1;
             engine.camera.UpdateProjection();
         } else if (input.isPressed(&window, .E)) {
-            engine.camera.near -= camMoveSpeed;
+            engine.camera.near -= camMoveSpeed * delta * 0.1;
             engine.camera.UpdateProjection();
         }
 
@@ -139,11 +141,13 @@ pub fn main() !void {
 
         const modelOffset = math.Mat4x4.translate(motion);
 
+        shader.bind();
+
         // Update Shader uniforms
         try shader.setUniformByName("u_projection", engine.camera.projection);
         try shader.setUniformByName("u_view", engine.camera.view);
         try shader.setUniformByName("u_tint", color.lime.toVec4());
-        // try shader.setUniformByName("u_texture", @as(i32, @intCast(textureId)));
+        // try shader.setUniformByName("u_texture", @as(i32, @intCast(wallTexture.id)));
 
         for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
             const position = math.Mat4x4.translate(math.vec3(

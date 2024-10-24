@@ -91,7 +91,7 @@ pub const Engine = struct {
         return !self.window.shouldClose();
     }
 
-    pub fn createScene(self: *Engine) !void {
+    pub fn createScene(self: *Engine) void {
         self.scene = .{ .objects = .{} };
     }
 

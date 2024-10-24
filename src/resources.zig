@@ -3,6 +3,8 @@ const std = @import("std");
 const math = @import("math");
 const gl = @import("gl");
 
+const c = @import("c.zig");
+
 pub const Scene = struct {
     objects: std.BoundedArray(Object, 1024),
 
@@ -12,9 +14,9 @@ pub const Scene = struct {
         }
     }
 
-    pub fn addObject(self: *Scene, mesh: *Mesh, shader: *Shader) !*Object {
+    pub fn addObject(self: *Scene, mesh: *Mesh, material: *Material) !*Object {
         const object = try self.objects.addOne();
-        object.* = .{ .mesh = mesh, .shader = shader };
+        object.* = .{ .mesh = mesh, .material = material };
         return object;
     }
 };
@@ -26,16 +28,16 @@ pub const Transform = struct {
 pub const Object = struct {
     transform: Transform = .{},
     mesh: ?*Mesh = null,
-    shader: ?*Shader = null,
+    material: ?*Material = null,
     visible: bool = true,
 
     pub fn render(self: *const Object) !void {
         if (!self.visible) return;
         const mesh = self.mesh orelse return;
-        const shader = self.shader orelse return;
+        const material = self.material orelse return;
+        try material.bind();
+        try material.shader.?.setUniformByName("u_model", self.transform.local2World);
         mesh.bind();
-        try shader.setUniformByName("u_model", self.transform.local2World);
-        shader.bind();
     }
 };
 
@@ -55,6 +57,46 @@ pub const Vertex = extern struct {
         // std.log.info("Size of Vec3:{}", .{@sizeOf(math.Vec3)}); // = 16
         // std.log.info("Size of Vec4:{}", .{@sizeOf(math.Vec4)}); // = 16
         // std.log.info("Size of vertex:{}", .{@sizeOf(Vertex)}); // = 64?
+    }
+};
+
+pub const Material = struct {
+    shader: ?*Shader = null,
+    properties: std.BoundedArray(Property, 16) = .{},
+
+    pub const Property = struct {
+        name: [:0]const u8,
+        data: Data,
+
+        const Data = union(enum) {
+            int: i32,
+            float: i32,
+            texture: *Texture,
+            vec2: math.Vec2,
+            vec3: math.Vec3,
+            vec4: math.Vec4,
+            mat4: math.Mat4x4,
+        };
+    };
+
+    pub fn bind(self: Material) !void {
+        if (self.shader) |shader| {
+            shader.bind();
+            for (self.properties.constSlice()) |prop| {
+                switch (prop.data) {
+                    inline else => |data| {
+                        try shader.setUniformByName(prop.name, data);
+                    },
+                }
+            }
+        }
+    }
+
+    pub fn addProperty(self: Material) !void {
+        try self.props.append(.{
+            .name = "property",
+            .data = .{ .int = 0 },
+        });
     }
 };
 
@@ -197,7 +239,6 @@ pub const Shader = struct {
         gl.deleteProgram(self.program);
     }
 
-    // Shader uniforms:
     pub fn setUniformByName(self: *Shader, name: []const u8, uniform: anytype) !void {
         const location = gl.getUniformLocation(self.program, name.ptr);
         if (location == -1) {
@@ -208,7 +249,8 @@ pub const Shader = struct {
 
     // TODO add more types
     fn setUniform(location: i32, uniform: anytype) void {
-        switch (@TypeOf(uniform)) {
+        const T = @TypeOf(uniform);
+        switch (T) {
             i32 => gl.uniform1i(location, uniform),
             u32 => gl.uniform1ui(location, uniform),
             f32 => gl.uniform1f(location, uniform),
@@ -216,10 +258,79 @@ pub const Shader = struct {
             math.Vec3 => gl.uniform3fv(location, 1, &uniform.v[0]),
             math.Vec4 => gl.uniform4fv(location, 1, &uniform.v[0]),
             math.Mat4x4 => gl.uniformMatrix4fv(@intCast(location), 1, gl.FALSE, &uniform.v[0].v[0]),
-            else => {
-                std.log.err("Uniform type not yet implemented: ({})", .{@TypeOf(uniform)});
-                std.process.exit(1);
-            },
+            else => unreachable, //@compileError("Uniform type not yet implemented: (" ++ @typeName(T) ++ ")!"),
         }
+    }
+};
+
+pub const Texture = struct {
+    width: i32 = 0,
+    height: i32 = 0,
+    channels: i32 = 0,
+    id: u32 = 0,
+
+    buffer: [*c]u8 = null,
+
+    const targetChannels = 4;
+
+    const Error = error{
+        InvalidPath,
+        FailedLoading,
+    };
+
+    pub fn load(path: [:0]const u8) !Texture {
+        var w: c_int = undefined;
+        var h: c_int = undefined;
+        var channels: c_int = undefined;
+
+        c.stbi_set_flip_vertically_on_load(1);
+        const buffer = c.stbi_load(path, &w, &h, &channels, targetChannels);
+
+        if (buffer == null) {
+            return Error.FailedLoading;
+        }
+
+        return Texture{
+            .width = w,
+            .height = h,
+            .channels = channels,
+            .buffer = buffer,
+        };
+    }
+
+    pub fn create(self: *Texture) void {
+        gl.genTextures(1, &self.id);
+        gl.bindTexture(gl.TEXTURE_2D, self.id);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); // or gl.CLAMP_TO_EDGE
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            if (self.channels == 4) gl.RGBA8 else gl.RGBA,
+            self.width,
+            self.height,
+            0,
+            if (self.channels == 4) gl.RGB8 else gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            self.buffer,
+        );
+    }
+
+    pub fn bind(self: *Texture, slot: i32) void {
+        gl.activeTexture(gl.TEXTURE0 + @as(c_uint, @intCast(slot)));
+        gl.bindTexture(gl.TEXTURE_2D, self.id);
+    }
+
+    pub fn log(self: Texture) void {
+        std.log.info("width:{} height:{} channels:{}", .{ self.width, self.height, self.channels });
+    }
+
+    pub fn deinit(self: *Texture) void {
+        c.stbi_image_free(self.buffer);
     }
 };
