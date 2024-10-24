@@ -4,6 +4,7 @@ const math = @import("math");
 const gl = @import("gl");
 
 const c = @import("c.zig");
+const Color = @import("color.zig");
 
 pub const Scene = struct {
     objects: std.BoundedArray(Object, 1024),
@@ -71,6 +72,7 @@ pub const Material = struct {
             vec3: math.Vec3,
             vec4: math.Vec4,
             mat4: math.Mat4x4,
+            color: Color,
         };
     };
 
@@ -87,6 +89,7 @@ pub const Material = struct {
                         try shader.setUniformByName(prop.name, textureUnit);
                         textureUnit += 1;
                     },
+                    .color => |color| try shader.setUniformByName(prop.name, color.toVec4()),
                     inline else => |data| {
                         try shader.setUniformByName(prop.name, data);
                     },
@@ -252,6 +255,7 @@ pub const Shader = struct {
     pub fn setUniformByName(self: *Shader, name: []const u8, uniform: anytype) !void {
         const location = gl.getUniformLocation(self.program, name.ptr);
         if (location == -1) {
+            std.log.err("Invalid name: {s}", .{name});
             return Error.InvalidUniformName;
         }
         setUniform(location, uniform);

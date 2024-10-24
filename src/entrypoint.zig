@@ -26,10 +26,9 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     var shader = Shader{
-        .fragmentSource = @embedFile("Assets/frag.glsl"),
+        .fragmentSource = @embedFile("Assets/doubleTexture.glsl"),
         .vertexSource = @embedFile("Assets/vert.glsl"),
     };
-
     try shader.compile();
     defer shader.deinit();
 
@@ -45,7 +44,7 @@ pub fn main() !void {
 
     var motion = math.vec3(0, 0, 0);
 
-    var camOffset = math.vec3(0.0, 0.0, 5);
+    var camOffset = math.vec3(-15.0, 0.0, 5);
 
     window.setKeyCallback(input.keyCallBack);
     var lineModeToggle = false;
@@ -54,31 +53,30 @@ pub fn main() !void {
 
     engine.createScene();
 
+    var wallTexture = try Texture.load("src/Assets/wall.jpg");
+    defer wallTexture.deinit();
+    wallTexture.create();
+
     var prototypeTexture = try Texture.load("src/Assets/prototype.png");
     defer prototypeTexture.deinit();
     prototypeTexture.create();
 
     var prototypeMat = resource.Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.orange.toVec4());
-    try prototypeMat.addProperty("u_texture", &prototypeTexture);
-
-    var wallTexture = try Texture.load("src/Assets/wall.jpg");
-    defer wallTexture.deinit();
-    wallTexture.create();
+    try prototypeMat.addProperty("u_tint", color.orange);
+    try prototypeMat.addProperty("u_texture1", &prototypeTexture);
+    try prototypeMat.addProperty("u_texture2", &wallTexture);
 
     var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.chartreuse.toVec4());
-    try wallMat.addProperty("u_texture", &wallTexture);
+    try wallMat.addProperty("u_tint", color.chartreuse);
+    try wallMat.addProperty("u_texture1", &wallTexture);
+    try wallMat.addProperty("u_texture2", &prototypeTexture);
 
     var pcg = std.rand.Pcg.init(456);
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(
-            &quad,
-            if (pcg.random().boolean()) &prototypeMat else &wallMat,
-        );
+        _ = try engine.scene.?.addObject(&quad, if (pcg.random().boolean()) &prototypeMat else &wallMat);
     }
 
     var lastFrameTime = glfw.getTime();
@@ -141,8 +139,6 @@ pub fn main() !void {
         // Update Shader uniforms
         try shader.setUniformByName("u_projection", engine.camera.projection);
         try shader.setUniformByName("u_view", engine.camera.view);
-        try shader.setUniformByName("u_tint", color.lime.toVec4());
-        // try shader.setUniformByName("u_texture", @as(i32, @intCast(wallTexture.id)));
 
         for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
             const position = math.Mat4x4.translate(math.vec3(
