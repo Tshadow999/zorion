@@ -52,29 +52,23 @@ pub fn main() !void {
 
     const camMoveSpeed: f32 = 10;
 
-    //std.log.info("width:{}\t height:{}\t channels:{}\n", .{ width, height, channels });cl
-
     engine.createScene();
 
     var prototypeTexture = try Texture.load("src/Assets/prototype.png");
     defer prototypeTexture.deinit();
     prototypeTexture.create();
 
-    prototypeTexture.log();
-
     var prototypeMat = resource.Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.white.toVec4());
+    try prototypeMat.addProperty("u_tint", color.azure.toVec4());
     try prototypeMat.addProperty("u_texture", &prototypeTexture);
 
     var wallTexture = try Texture.load("src/Assets/wall.jpg");
     defer wallTexture.deinit();
     wallTexture.create();
 
-    wallTexture.log();
-
     var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.white.toVec4());
+    try wallMat.addProperty("u_tint", color.violet.toVec4());
     try wallMat.addProperty("u_texture", &wallTexture);
 
     var pcg = std.rand.Pcg.init(456);

@@ -52,11 +52,6 @@ pub const Vertex = extern struct {
         Mesh.addElement(1, 2, @offsetOf(Vertex, "uv"), false);
         Mesh.addElement(2, 3, @offsetOf(Vertex, "normal"), false);
         Mesh.addElement(3, 4, @offsetOf(Vertex, "color"), false);
-
-        // std.log.info("Size of Vec2:{}", .{@sizeOf(math.Vec2)}); // = 8
-        // std.log.info("Size of Vec3:{}", .{@sizeOf(math.Vec3)}); // = 16
-        // std.log.info("Size of Vec4:{}", .{@sizeOf(math.Vec4)}); // = 16
-        // std.log.info("Size of vertex:{}", .{@sizeOf(Vertex)}); // = 64?
     }
 };
 
@@ -111,7 +106,7 @@ pub const Material = struct {
             }
         }
 
-        unreachable;
+        @compileError(@typeName(@TypeOf(value)) ++ " is an invalid property type!");
     }
 };
 
@@ -257,7 +252,6 @@ pub const Shader = struct {
     pub fn setUniformByName(self: *Shader, name: []const u8, uniform: anytype) !void {
         const location = gl.getUniformLocation(self.program, name.ptr);
         if (location == -1) {
-            std.log.err("name:{s}", .{name});
             return Error.InvalidUniformName;
         }
         setUniform(location, uniform);
@@ -274,7 +268,7 @@ pub const Shader = struct {
             math.Vec3 => gl.uniform3fv(location, 1, &uniform.v[0]),
             math.Vec4 => gl.uniform4fv(location, 1, &uniform.v[0]),
             math.Mat4x4 => gl.uniformMatrix4fv(@intCast(location), 1, gl.FALSE, &uniform.v[0].v[0]),
-            else => unreachable, //@compileError("Uniform type not yet implemented: (" ++ @typeName(T) ++ ")!"),
+            else => @compileError("Uniform type not yet implemented: (" ++ @typeName(T) ++ ")!"),
         }
     }
 };
