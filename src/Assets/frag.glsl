@@ -10,13 +10,13 @@ uniform sampler2D u_texture;
 
 void main() 
 {
-    // vec4 tex = texture(u_texture, o_uv);
     vec3 lightDir = normalize(vec3(1.0f, 1.0f, 0.5f));
 
     float light = dot(o_norm, lightDir);
-    vec3 diffuse = vec3(0.8f, 0.3f, 0.2f) ;
-    // vec3 color = diffuse * tex.rgb;
+    vec3 diffuse = vec3(0.8f, 0.3f, 0.2f);
+    vec4 tex = texture(u_texture, o_uv);
+    vec3 color = diffuse * tex.rgb;
 
-
-    FragColor = u_tint; // vec4(color, 1.0f) * u_tint;
+    // FragColor = vec4(color, 1.0f) * u_tint;
+    FragColor = u_tint * tex;
 }

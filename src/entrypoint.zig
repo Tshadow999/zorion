@@ -56,39 +56,40 @@ pub fn main() !void {
 
     engine.createScene();
 
-    var wallTexture = try Texture.load("src/Assets/wall.jpg");
-    defer wallTexture.deinit();
-    wallTexture.create();
-
-    var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.properties.append(.{ .name = "u_tint", .data = .{ .vec4 = color.lime.toVec4() } });
-    // try wallMat.properties.append(.{ .name = "u_texture", .data = .{ .texture = &wallTexture } });
-
     var prototypeTexture = try Texture.load("src/Assets/prototype.png");
     defer prototypeTexture.deinit();
     prototypeTexture.create();
 
-    var prototypeMat = resource.Material{ .shader = &shader };
-    try prototypeMat.properties.append(.{ .name = "u_tint", .data = .{ .vec4 = color.yellow.toVec4() } });
-    // try prototypeMat.properties.append(.{ .name = "u_texture", .data = .{ .texture = &prototypeTexture } });
+    prototypeTexture.log();
 
-    // var sphere1 = try engine.scene.?.addObject(&sphere, &wallMat);
-    // var sphere2 = try engine.scene.?.addObject(&sphere, &prototypeMat);
+    var prototypeMat = resource.Material{ .shader = &shader };
+
+    try prototypeMat.addProperty("u_tint", color.white.toVec4());
+    try prototypeMat.addProperty("u_texture", &prototypeTexture);
+
+    var wallTexture = try Texture.load("src/Assets/wall.jpg");
+    defer wallTexture.deinit();
+    wallTexture.create();
+
+    wallTexture.log();
+
+    var wallMat = resource.Material{ .shader = &shader };
+    try wallMat.addProperty("u_tint", color.white.toVec4());
+    try wallMat.addProperty("u_texture", &wallTexture);
 
     var pcg = std.rand.Pcg.init(456);
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(&quad, &prototypeMat);
-        if (pcg.random().boolean()) {
-            _ = try engine.scene.?.addObject(&quad, &prototypeMat);
-        } else {
-            _ = try engine.scene.?.addObject(&quad, &wallMat);
-        }
+        _ = try engine.scene.?.addObject(
+            &quad,
+            if (pcg.random().boolean()) &prototypeMat else &wallMat,
+        );
     }
 
     var lastFrameTime = glfw.getTime();
 
+    // CORE LOOP \\
     while (engine.isRunning()) {
         engine.render();
 

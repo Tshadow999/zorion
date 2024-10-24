@@ -82,8 +82,16 @@ pub const Material = struct {
     pub fn bind(self: Material) !void {
         if (self.shader) |shader| {
             shader.bind();
+
+            var textureUnit: i32 = 1;
+
             for (self.properties.constSlice()) |prop| {
                 switch (prop.data) {
+                    .texture => |texture| {
+                        texture.bind(textureUnit);
+                        try shader.setUniformByName(prop.name, textureUnit);
+                        textureUnit += 1;
+                    },
                     inline else => |data| {
                         try shader.setUniformByName(prop.name, data);
                     },
@@ -92,11 +100,18 @@ pub const Material = struct {
         }
     }
 
-    pub fn addProperty(self: Material) !void {
-        try self.props.append(.{
-            .name = "property",
-            .data = .{ .int = 0 },
-        });
+    pub fn addProperty(self: *Material, name: [:0]const u8, value: anytype) !void {
+        inline for (std.meta.fields(Property.Data)) |field| {
+            if (field.type == @TypeOf(value)) {
+                try self.properties.append(.{
+                    .name = name,
+                    .data = @unionInit(Material.Property.Data, field.name, value),
+                });
+                return;
+            }
+        }
+
+        unreachable;
     }
 };
 
@@ -242,6 +257,7 @@ pub const Shader = struct {
     pub fn setUniformByName(self: *Shader, name: []const u8, uniform: anytype) !void {
         const location = gl.getUniformLocation(self.program, name.ptr);
         if (location == -1) {
+            std.log.err("name:{s}", .{name});
             return Error.InvalidUniformName;
         }
         setUniform(location, uniform);
@@ -305,17 +321,21 @@ pub const Texture = struct {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); // or gl.CLAMP_TO_EDGE
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+        // The current setup seems to work fine?
+        // const internalFormat: u32 = if (self.channels == 4) gl.RGBA8 else gl.RGB8;
+        // const format: u32 = if (self.channels == 4) gl.RGBA else gl.RGB;
 
         gl.texImage2D(
             gl.TEXTURE_2D,
             0,
-            if (self.channels == 4) gl.RGBA8 else gl.RGBA,
+            gl.RGBA8, // @intCast(internalFormat),
             self.width,
             self.height,
             0,
-            if (self.channels == 4) gl.RGB8 else gl.RGBA,
+            gl.RGBA, // @intCast(format),
             gl.UNSIGNED_BYTE,
             self.buffer,
         );
