@@ -60,7 +60,7 @@ pub fn main() !void {
 
     var prototypeMat = resource.Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.azure.toVec4());
+    try prototypeMat.addProperty("u_tint", color.orange.toVec4());
     try prototypeMat.addProperty("u_texture", &prototypeTexture);
 
     var wallTexture = try Texture.load("src/Assets/wall.jpg");
@@ -68,7 +68,7 @@ pub fn main() !void {
     wallTexture.create();
 
     var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.violet.toVec4());
+    try wallMat.addProperty("u_tint", color.chartreuse.toVec4());
     try wallMat.addProperty("u_texture", &wallTexture);
 
     var pcg = std.rand.Pcg.init(456);
