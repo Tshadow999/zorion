@@ -26,14 +26,14 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     var shader = Shader{
-        .fragmentSource = @embedFile("Assets/doubleTexture.glsl"),
+        .fragmentSource = @embedFile("Assets/frag.glsl"),
         .vertexSource = @embedFile("Assets/vert.glsl"),
     };
     try shader.compile();
     defer shader.deinit();
 
     var sphere: Mesh = Mesh.init(alloc);
-    try primitive.sphere(&sphere, 1, 64, 64);
+    try primitive.sphere(&sphere, 1, 16);
     sphere.create();
     defer sphere.deinit();
 
@@ -47,14 +47,9 @@ pub fn main() !void {
     cube.create();
     defer cube.deinit();
 
-    var motion = math.vec3(0, 0, 0);
-
-    var camOffset = math.vec3(-15.0, 0.0, 5);
-
     window.setKeyCallback(input.keyCallBack);
-    var lineModeToggle = false;
 
-    const camMoveSpeed: f32 = 10;
+    var lineModeToggle = false;
 
     engine.createScene();
 
@@ -68,20 +63,26 @@ pub fn main() !void {
 
     var prototypeMat = resource.Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.orange);
-    try prototypeMat.addProperty("u_texture1", &prototypeTexture);
-    try prototypeMat.addProperty("u_texture2", &wallTexture);
+    try prototypeMat.addProperty("u_tint", color.white);
+    try prototypeMat.addProperty("u_texture", &prototypeTexture);
+    // try prototypeMat.addProperty("u_texture2", &wallTexture);
 
     var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.chartreuse);
-    try wallMat.addProperty("u_texture1", &wallTexture);
-    try wallMat.addProperty("u_texture2", &prototypeTexture);
+    try wallMat.addProperty("u_tint", color.white);
+    try wallMat.addProperty("u_texture", &prototypeTexture);
+    // try wallMat.addProperty("u_texture2", &wallTexture);
+
+    var motion = math.vec3(0, 0, 0);
+
+    var camOffset = math.vec3(-15.0, 0.0, 5);
+    const angle: f32 = 0.0;
+    const camMoveSpeed: f32 = 10;
 
     var pcg = std.rand.Pcg.init(456);
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(&cube, if (pcg.random().boolean()) &prototypeMat else &wallMat);
+        _ = try engine.scene.?.addObject(&sphere, if (pcg.random().boolean()) &prototypeMat else &wallMat);
     }
 
     var lastFrameTime = glfw.getTime();
@@ -122,6 +123,13 @@ pub fn main() !void {
             camOffset.v[1] -= camMoveSpeed * delta;
         }
 
+        // Rotating camera
+        // if (input.isPressed(&window, .Q)) {
+        //     angle += camMoveSpeed * delta;
+        // } else if (input.isPressed(&window, .E)) {
+        //     angle -= camMoveSpeed * delta;
+        // }
+
         // Updating camera settings
         if (input.isPressed(&window, .Q)) {
             engine.camera.near += camMoveSpeed * delta * 0.1;
@@ -132,8 +140,9 @@ pub fn main() !void {
         }
 
         const camOffsetMat = math.Mat4x4.translate(camOffset);
-        engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
-
+        const rotationMat = math.Mat4x4.rotateX(angle);
+        // engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
+        engine.camera.view = math.Mat4x4.mul(&camOffsetMat, &rotationMat);
         motion.v[0] = @floatCast(@sin(glfw.getTime()));
         motion.v[1] = @floatCast(@cos(glfw.getTime()));
 

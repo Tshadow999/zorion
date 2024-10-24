@@ -8,46 +8,45 @@ const resources = @import("resources.zig");
 const Mesh = resources.Mesh;
 const Vertex = resources.Vertex;
 
-fn circlePoints(points: *std.ArrayList(math.Vec3), sides: u32, radius: f32) !void {
-    for (0..sides + 1) |i| {
-        const theta: f32 = @as(f32, @floatFromInt(i)) * math.tau / @as(f32, @floatFromInt(sides));
-        const ci = math.vec3(@cos(theta) * radius, 0, @sin(theta) * radius);
-        try points.append(ci);
-    }
-}
-
-fn toF32(value: anytype) f32 {
+fn intToF32(value: anytype) f32 {
     return @as(f32, @floatFromInt(value));
 }
 
-pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u32) !void {
+fn circlePoints(points: []math.Vec3, sides: u32, radius: f32) void {
+    for (0..sides + 1) |i| {
+        const theta: f32 = @as(f32, @floatFromInt(i)) * math.tau / @as(f32, @floatFromInt(sides));
+        const ci = math.vec3(@cos(theta) * radius, 0, @sin(theta) * radius);
+        points[i] = ci;
+    }
+}
+
+pub fn sphere(mesh: *Mesh, radius: f32, segments: u32) !void {
+    const minSphereSegments: u32 = 4;
     const offset: u32 = @intCast(mesh.vertices.items.len);
 
-    const vertSegs: u32 = if (verticalSegments < 3) 3 else verticalSegments;
-    const radSegs: u32 = if (radialSegments < 3) 3 else radialSegments;
+    const vertSegs: u32 = if (segments < minSphereSegments) minSphereSegments else segments;
+    const radSegs: u32 = if (segments < minSphereSegments) minSphereSegments else segments;
 
     for (0..vertSegs + 1) |v| {
-        const height = -@cos(toF32(v) / toF32(vertSegs) * math.pi) * radius;
-        const ringRadius = @sin(toF32(v) / toF32(vertSegs) * math.pi) * radius;
+        const height = -@cos(intToF32(v) / intToF32(vertSegs) * math.pi) * radius;
+        const ringRadius = @sin(intToF32(v) / intToF32(vertSegs) * math.pi) * radius;
 
-        var buffer: [256 * @sizeOf(math.Vec3)]u8 = undefined;
-        var fba = std.heap.FixedBufferAllocator.init(&buffer);
-
-        var verts = std.ArrayList(math.Vec3).init(fba.allocator());
-        defer verts.deinit();
-
-        try circlePoints(&verts, vertSegs, ringRadius);
+        var buffer = try std.BoundedArray(math.Vec3, 256).init(radSegs + 1);
+        circlePoints(buffer.slice(), vertSegs, ringRadius);
 
         for (0..radSegs + 1) |i| {
+            // plus on1 to rad and vertSegs or no?
             const uv = math.vec2(
-                toF32(i) / toF32(radSegs),
-                toF32(v) / toF32(vertSegs),
+                intToF32(i) / intToF32(radSegs),
+                intToF32(v) / intToF32(vertSegs),
             );
 
-            verts.items[i].v[1] += height;
+            const pos = &buffer.slice()[i];
+
+            pos.*.v[1] += height;
             try mesh.vertices.append(Vertex{
-                .position = verts.items[i],
-                .normal = verts.items[i].normalize(0.01),
+                .position = pos.*,
+                .normal = pos.*.normalize(0.01),
                 .uv = uv,
             });
         }

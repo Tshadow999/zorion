@@ -17,6 +17,6 @@ void main()
     vec4 tex = texture(u_texture, o_uv);
     vec3 color = diffuse * tex.rgb;
 
-    // FragColor = vec4(color, 1.0f) * u_tint;
-    FragColor = u_tint * tex;
+    FragColor = tex * u_tint;//  * light;
+    // FragColor = u_tint * tex;
 }
