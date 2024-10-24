@@ -16,16 +16,19 @@ fn circlePoints(points: *std.ArrayList(math.Vec3), sides: u32, radius: f32) !voi
     }
 }
 
+fn toF32(value: anytype) f32 {
+    return @as(f32, @floatFromInt(value));
+}
+
 pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u32) !void {
+    const offset: u32 = @intCast(mesh.vertices.items.len);
+
     const vertSegs: u32 = if (verticalSegments < 3) 3 else verticalSegments;
     const radSegs: u32 = if (radialSegments < 3) 3 else radialSegments;
 
-    mesh.vertices.clearRetainingCapacity();
-    mesh.indices.clearRetainingCapacity();
-
     for (0..vertSegs + 1) |v| {
-        const height = -@cos(@as(f32, @floatFromInt(v)) / @as(f32, @floatFromInt(vertSegs)) * math.pi) * radius;
-        const ringRadius = @sin(@as(f32, @floatFromInt(v)) / @as(f32, @floatFromInt(vertSegs)) * math.pi) * radius;
+        const height = -@cos(toF32(v) / toF32(vertSegs) * math.pi) * radius;
+        const ringRadius = @sin(toF32(v) / toF32(vertSegs) * math.pi) * radius;
 
         var buffer: [256 * @sizeOf(math.Vec3)]u8 = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&buffer);
@@ -36,21 +39,26 @@ pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u
         try circlePoints(&verts, vertSegs, ringRadius);
 
         for (0..radSegs + 1) |i| {
-            verts.items[i].v[1] += height;
-            try mesh.vertices.append(Vertex{ .position = verts.items[i] });
-        }
-    }
+            const uv = math.vec2(
+                toF32(i) / toF32(radSegs),
+                toF32(v) / toF32(vertSegs),
+            );
 
-    for (mesh.vertices.items) |*vertex| {
-        vertex.normal = vertex.position.normalize(0.01);
+            verts.items[i].v[1] += height;
+            try mesh.vertices.append(Vertex{
+                .position = verts.items[i],
+                .normal = verts.items[i].normalize(0.01),
+                .uv = uv,
+            });
+        }
     }
 
     for (0..radSegs) |r| {
         for (0..vertSegs) |v| {
-            const index0 = (radSegs + 1) * v + r;
-            const index1 = (radSegs + 1) * v + r + 1;
-            const index2 = (radSegs + 1) + index0;
-            const index3 = (radSegs + 1) + index1;
+            const index0 = offset + (radSegs + 1) * v + r;
+            const index1 = offset + (radSegs + 1) * v + r + 1;
+            const index2 = index0 + (radSegs + 1);
+            const index3 = index1 + (radSegs + 1);
 
             try mesh.indices.append(@intCast(index0));
             try mesh.indices.append(@intCast(index1));
@@ -64,42 +72,44 @@ pub fn sphere(mesh: *Mesh, radius: f32, verticalSegments: u32, radialSegments: u
 }
 
 pub fn cube(mesh: *Mesh, size: f32) !void {
+    const offset: u32 = @intCast(mesh.vertices.items.len);
+
     const vertices = [24]Vertex{
         // Front face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, 0, 1) },
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, 0, 1) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 0, 1) },
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 0, 1) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 0) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 1.0) },
 
         // Back face
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, 0, -1) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, 0, -1) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 0, -1) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 0, -1) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(0, 1.0) },
 
         // Left face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(-1, 0, 0) },
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(-1, 0, 0) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(-1, 0, 0) },
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(-1, 0, 0) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 0) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 1.0) },
 
         // Right face
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(1, 0, 0) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(1, 0, 0) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(1, 0, 0) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(1, 0, 0) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 0) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 1.0) },
 
         // Top face
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 1, 0) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 1, 0) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 1, 0) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 1, 0) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 0) },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 1.0) },
 
         // Bottom face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, -1, 0) },
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, -1, 0) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, -1, 0) },
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, -1, 0) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 0) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 0) },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 1.0) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 1.0) },
     };
 
     const indices = [36]u32{
@@ -123,21 +133,17 @@ pub fn cube(mesh: *Mesh, size: f32) !void {
         20, 23, 22,
     };
 
-    mesh.vertices.clearRetainingCapacity();
-    mesh.indices.clearRetainingCapacity();
-
     for (vertices) |vertex| {
         try mesh.vertices.append(vertex);
     }
 
     for (indices) |index| {
-        try mesh.indices.append(index);
+        try mesh.indices.append(index + offset);
     }
 }
 
 pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
-    mesh.vertices.clearRetainingCapacity();
-    mesh.indices.clearRetainingCapacity();
+    const offset: u32 = @intCast(mesh.vertices.items.len);
 
     // Always forwards for now
     const squareVerts = [4]Vertex{
@@ -164,8 +170,8 @@ pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
     };
 
     const squareIndices = [6]u32{
-        0, 1, 2, // Triangle 1
-        0, 2, 3, // Triangle 2
+        offset + 0, offset + 1, offset + 2, // Triangle 1
+        offset + 0, offset + 2, offset + 3, // Triangle 2
     };
 
     try mesh.vertices.appendSlice(&squareVerts);

@@ -42,6 +42,11 @@ pub fn main() !void {
     quad.create();
     defer quad.deinit();
 
+    var cube: Mesh = Mesh.init(alloc);
+    try primitive.cube(&cube, 1.5);
+    cube.create();
+    defer cube.deinit();
+
     var motion = math.vec3(0, 0, 0);
 
     var camOffset = math.vec3(-15.0, 0.0, 5);
@@ -76,7 +81,7 @@ pub fn main() !void {
 
     for (0..500) |i| {
         _ = i;
-        _ = try engine.scene.?.addObject(&quad, if (pcg.random().boolean()) &prototypeMat else &wallMat);
+        _ = try engine.scene.?.addObject(&cube, if (pcg.random().boolean()) &prototypeMat else &wallMat);
     }
 
     var lastFrameTime = glfw.getTime();
