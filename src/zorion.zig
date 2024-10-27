@@ -58,6 +58,10 @@ pub const Engine = struct {
         };
         self.window = window;
 
+        // Set up some callbacks
+        self.window.setFramebufferSizeCallback(frameBufferChangedCallback);
+        self.window.setCursorPosCallback(getMousePosCallback);
+
         glfw.makeContextCurrent(self.window);
 
         const proc: glfw.GLProc = undefined;
@@ -70,6 +74,8 @@ pub const Engine = struct {
         gl.cullFace(gl.BACK);
 
         gl.polygonMode(gl.FRONT, gl.FILL); // Possible modes: point, line or fill
+
+        gl.viewport(0, 0, @as(c_int, @intCast(width)), @as(c_int, @intCast(height)));
 
         self.camera.screenWidth = windowProps.width;
         self.camera.screenHeight = windowProps.height;
@@ -93,6 +99,9 @@ pub const Engine = struct {
 
     pub fn createScene(self: *Engine) void {
         self.scene = .{ .objects = .{} };
+    }
+    pub fn quit(self: *Engine) void {
+        self.window.setShouldClose(true);
     }
 
     pub fn deinit(self: *Engine) void {
@@ -126,6 +135,20 @@ pub const Camera3D = struct {
         );
     }
 };
+
+// Window callbacks
+
+fn frameBufferChangedCallback(window: glfw.Window, width: u32, height: u32) void {
+    gl.viewport(0, 0, @as(c_int, @intCast(width)), @as(c_int, @intCast(height)));
+    _ = window;
+}
+
+fn getMousePosCallback(window: glfw.Window, xpos: f64, ypos: f64) void {
+    input.mousePosCallback(@floatCast(xpos), @floatCast(ypos));
+    _ = window;
+}
+
+// Other
 
 fn errorCallback(error_code: glfw.ErrorCode, description: [:0]const u8) void {
     std.log.err("glfw:{}: {s}\n", .{ error_code, description });

@@ -10,6 +10,13 @@ const Event = struct {
     mods: glfw.Mods,
 };
 
+const MouseState = struct {
+    x: f32 = 0,
+    y: f32 = 0,
+};
+
+var mouse = MouseState{};
+
 var keyEvents: std.BoundedArray(Event, 16) = std.BoundedArray(Event, 16){};
 
 fn getKeyState(window: *const glfw.Window, key: Key) State {
@@ -30,6 +37,7 @@ pub fn keyCallBack(window: glfw.Window, key: glfw.Key, scancode: i32, action: gl
     }) catch {};
     _ = window;
 }
+
 pub fn clearEvents() void {
     keyEvents.len = 0;
 }
@@ -144,4 +152,14 @@ pub fn isReleased(key: Key) bool {
         }
     }
     return false;
+}
+
+pub fn mousePosCallback(x: f32, y: f32) void {
+    mouse.x = x;
+    mouse.y = y;
+}
+
+/// Top left (0, 0) and bottom right: window size
+pub fn getMouseScreenPos() MouseState {
+    return mouse;
 }

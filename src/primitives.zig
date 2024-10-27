@@ -4,6 +4,7 @@ const math = @import("math");
 const gl = @import("gl");
 
 const resources = @import("resources.zig");
+const Color = @import("color.zig");
 
 const Mesh = resources.Mesh;
 const Vertex = resources.Vertex;
@@ -48,6 +49,7 @@ pub fn sphere(mesh: *Mesh, radius: f32, segments: u32) !void {
                 .position = pos.*,
                 .normal = pos.*.normalize(0.01),
                 .uv = uv,
+                .color = Color.white.toVec4(),
             });
         }
     }
@@ -75,40 +77,40 @@ pub fn cube(mesh: *Mesh, size: f32) !void {
 
     const vertices = [24]Vertex{
         // Front face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 0) },
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 0, 1), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
 
         // Back face
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 0, -1), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
 
         // Left face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 0) },
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(-1, 0, 0), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
 
         // Right face
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 0) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(1, 0, 0), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
 
         // Top face
-        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 0) },
-        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(0, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, 0), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, size, size), .normal = math.vec3(0, 1, 0), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
 
         // Bottom face
-        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 0) },
-        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 0) },
-        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 1.0) },
-        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 1.0) },
+        .{ .position = math.vec3(0, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, 0, 0), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(size, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(1.0, 1.0), .color = Color.white.toVec4() },
+        .{ .position = math.vec3(0, 0, size), .normal = math.vec3(0, -1, 0), .uv = math.vec2(0, 1.0), .color = Color.white.toVec4() },
     };
 
     const indices = [36]u32{
@@ -150,21 +152,25 @@ pub fn quad(mesh: *Mesh, width: f32, height: f32) !void {
             .position = math.vec3(0, 0, 0),
             .normal = math.vec3(0, 0, 1),
             .uv = math.vec2(0, 0),
+            .color = Color.white.toVec4(),
         },
         .{
             .position = math.vec3(width, 0, 0),
             .normal = math.vec3(0, 0, 1),
             .uv = math.vec2(1.0, 0),
+            .color = Color.white.toVec4(),
         },
         .{
             .position = math.vec3(width, height, 0),
             .normal = math.vec3(0, 0, 1),
             .uv = math.vec2(1.0, 1.0),
+            .color = Color.white.toVec4(),
         },
         .{
             .position = math.vec3(0, height, 0),
             .normal = math.vec3(0, 0, 1),
             .uv = math.vec2(0, 1.0),
+            .color = Color.white.toVec4(),
         },
     };
 

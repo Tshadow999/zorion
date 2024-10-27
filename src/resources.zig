@@ -128,12 +128,7 @@ pub const Mesh = struct {
         };
     }
 
-    fn addElement(
-        index: u32,
-        elementCount: i32,
-        elementPosition: u32,
-        normalized: bool,
-    ) void {
+    fn addElement(index: u32, elementCount: i32, elementPosition: u32, normalized: bool) void {
         const glNormalized: gl.GLboolean = if (normalized) gl.TRUE else gl.FALSE;
         gl.vertexAttribPointer(
             index,
@@ -192,6 +187,7 @@ pub const Shader = struct {
         InvalidUniformName,
         InvalidVertexShader,
         InvalidFragmentShader,
+        FailedToLink,
     };
 
     pub fn load(self: *Shader, vertexPath: []u8, fragmentPath: []u8) void {
@@ -220,6 +216,7 @@ pub const Shader = struct {
         gl.attachShader(self.program, fragShader);
 
         gl.linkProgram(self.program);
+        try checkShaderLinkStatus(self.program);
 
         gl.deleteShader(vertShader);
         gl.deleteShader(fragShader);
@@ -245,6 +242,23 @@ pub const Shader = struct {
                 std.log.err("FRAGMENT SHADER\n{s}", .{log[0..@intCast(maxLength)]});
                 return Error.InvalidFragmentShader;
             }
+        }
+    }
+    fn checkShaderLinkStatus(program: u32) !void {
+        var isLinked: i32 = 0;
+        gl.getProgramiv(program, gl.LINK_STATUS, &isLinked);
+        if (isLinked == gl.FALSE) {
+            var maxLength: i32 = 0;
+            gl.getProgramiv(program, gl.INFO_LOG_LENGTH, &maxLength);
+
+            const errorLogSize: usize = 512;
+            var log = [1:0]u8{0} ** errorLogSize;
+            gl.getShaderInfoLog(program, errorLogSize, &maxLength, &log);
+
+            gl.deleteProgram(program);
+
+            std.log.err("LINKING\n{s}", .{log[0..@intCast(maxLength)]});
+            return Error.FailedToLink;
         }
     }
 

@@ -63,19 +63,19 @@ pub fn main() !void {
 
     var prototypeMat = resource.Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.white);
+    try prototypeMat.addProperty("u_tint", color.black);
     try prototypeMat.addProperty("u_texture", &prototypeTexture);
-    // try prototypeMat.addProperty("u_texture2", &wallTexture);
+    // try prototypeMat.addProperty("u_texture", &wallTexture);
 
     var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.white);
+    try wallMat.addProperty("u_tint", color.blue);
     try wallMat.addProperty("u_texture", &prototypeTexture);
-    // try wallMat.addProperty("u_texture2", &wallTexture);
+    //  try wallMat.addProperty("u_texture", &wallTexture);
 
     var motion = math.vec3(0, 0, 0);
 
     var camOffset = math.vec3(-15.0, 0.0, 5);
-    const angle: f32 = 0.0;
+    var angleRadians: f32 = 0.0;
     const camMoveSpeed: f32 = 10;
 
     var pcg = std.rand.Pcg.init(456);
@@ -96,7 +96,7 @@ pub fn main() !void {
 
         // Quick escape
         if (input.isJustPressed(.Escape)) {
-            window.setShouldClose(true);
+            engine.quit();
         }
 
         if (input.isJustPressed(.P)) {
@@ -124,26 +124,26 @@ pub fn main() !void {
         }
 
         // Rotating camera
-        // if (input.isPressed(&window, .Q)) {
-        //     angle += camMoveSpeed * delta;
-        // } else if (input.isPressed(&window, .E)) {
-        //     angle -= camMoveSpeed * delta;
-        // }
-
-        // Updating camera settings
         if (input.isPressed(&window, .Q)) {
-            engine.camera.near += camMoveSpeed * delta * 0.1;
-            engine.camera.UpdateProjection();
+            angleRadians += camMoveSpeed * delta;
         } else if (input.isPressed(&window, .E)) {
-            engine.camera.near -= camMoveSpeed * delta * 0.1;
-            engine.camera.UpdateProjection();
+            angleRadians -= camMoveSpeed * delta;
         }
 
-        const camOffsetMat = math.Mat4x4.translate(camOffset);
-        const rotationMat = math.Mat4x4.rotateX(angle);
-        // engine.camera.view = math.Mat4x4.ident.mul(&camOffsetMat);
-        engine.camera.view = math.Mat4x4.mul(&camOffsetMat, &rotationMat);
-        motion.v[0] = @floatCast(@sin(glfw.getTime()));
+        // Updating camera settings
+        // if (input.isPressed(&window, .Q)) {
+        //     engine.camera.near += camMoveSpeed * delta * 0.1;
+        //     engine.camera.UpdateProjection();
+        // } else if (input.isPressed(&window, .E)) {
+        //     engine.camera.near -= camMoveSpeed * delta * 0.1;
+        //     engine.camera.UpdateProjection();
+        // }
+
+        const camTranslation = math.Mat4x4.translate(camOffset);
+        const rotationMat = math.Mat4x4.rotateX(angleRadians);
+        engine.camera.view = math.Mat4x4.mul(&rotationMat, &camTranslation);
+
+        // motion.v[0] = @floatCast(@sin(glfw.getTime()));
         motion.v[1] = @floatCast(@cos(glfw.getTime()));
 
         const modelOffset = math.Mat4x4.translate(motion);
@@ -163,7 +163,6 @@ pub fn main() !void {
             object.transform.local2World = math.Mat4x4.ident.mul(&position);
             object.transform.local2World = math.Mat4x4.mul(&object.transform.local2World, &modelOffset);
         }
-
         try engine.scene.?.render();
 
         input.clearEvents();
