@@ -7,7 +7,7 @@ const c = @import("c.zig");
 const Color = @import("color.zig");
 
 pub const Scene = struct {
-    objects: std.BoundedArray(Object, 1024),
+    objects: std.BoundedArray(Object, 10240),
 
     pub fn render(self: *Scene) !void {
         for (self.objects.constSlice()) |object| {

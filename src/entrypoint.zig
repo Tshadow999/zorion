@@ -17,7 +17,7 @@ const Texture = resource.Texture;
 
 pub fn main() !void {
     var engine = Zorion.Engine{};
-    const window = try engine.init(.{ .fullscreen = false });
+    const window = try engine.init(.{ .fullscreen = true });
 
     defer engine.deinit();
 
@@ -81,7 +81,10 @@ pub fn main() !void {
 
     var pcg = std.rand.Pcg.init(456);
 
-    for (0..500) |i| {
+    const objectCount: f32 = 1024;
+    const rootObjectCount = @sqrt(objectCount);
+
+    for (0..objectCount) |i| {
         _ = i;
         _ = try engine.scene.?.addObject(&sphere, if (pcg.random().boolean()) &prototypeMat else &wallMat);
     }
@@ -95,17 +98,20 @@ pub fn main() !void {
         const delta: f32 = @floatCast(glfw.getTime() - lastFrameTime);
         lastFrameTime = glfw.getTime();
 
+        std.log.info("fps:{d}", .{1.0 / delta});
+
         // Quick escape
         if (input.isJustPressed(.Escape)) {
             engine.quit();
         }
 
+        // Polygon mode toggle
         if (input.isJustPressed(.P)) {
             lineModeToggle = !lineModeToggle;
             gl.polygonMode(gl.FRONT, if (lineModeToggle) gl.LINE else gl.FILL); // try point line or fill
         }
 
-        // moving camera
+        // Moving camera
         if (input.isPressed(&window, .S)) {
             camOffset.v[2] += camMoveSpeed * delta;
         } else if (input.isPressed(&window, .W)) {
@@ -127,7 +133,7 @@ pub fn main() !void {
         // Rotating camera
         const mouseState = input.getMouseState();
         angleY -= mouseState.relativeX * delta * math.tau;
-        angleX -= mouseState.relativeY * delta * math.pi;
+        angleX = math.clamp(angleX - mouseState.relativeY * delta * math.tau, -math.pi / 2.0, math.pi / 2.0);
 
         // Updating camera settings
         // if (input.isPressed(&window, .Q)) {
@@ -139,15 +145,12 @@ pub fn main() !void {
         // }
 
         const camTranslation = math.Mat4x4.translate(camOffset);
-        const rotationMatY = math.Mat4x4.rotateY(angleY);
-        const rotationMatX = math.Mat4x4.rotateX(angleX);
-        const rotationMat = math.Mat4x4.mul(&rotationMatY, &rotationMatX);
+
+        const yaw = math.Mat4x4.rotateY(angleY);
+        const pitch = math.Mat4x4.rotateX(angleX);
+
+        const rotationMat = math.Mat4x4.mul(&pitch, &yaw);
         engine.camera.view = math.Mat4x4.mul(&rotationMat, &camTranslation);
-
-        // motion.v[0] = @floatCast(@sin(glfw.getTime()));
-        motion.v[1] = @floatCast(@cos(glfw.getTime()));
-
-        const modelOffset = math.Mat4x4.translate(motion);
 
         shader.bind();
 
@@ -157,10 +160,16 @@ pub fn main() !void {
 
         for (engine.scene.?.objects.slice(), 0..engine.scene.?.objects.len) |*object, i| {
             const position = math.Mat4x4.translate(math.vec3(
-                2.0 * @as(f32, @floatFromInt(@mod(i, 25))),
+                2.0 * @as(f32, @floatFromInt(@mod(i, @as(usize, @intFromFloat(rootObjectCount))))),
                 0,
-                2.0 * @as(f32, @floatFromInt(i)) / 25.0,
+                2.0 * @as(f32, @floatFromInt(i)) / rootObjectCount,
             ));
+
+            motion.v[1] = 0.5 * @as(f32, @floatCast(
+                @cos(glfw.getTime() + @as(f32, @floatFromInt(@mod(i, @as(usize, @intFromFloat(rootObjectCount)))))) + @sin(glfw.getTime() + @as(f32, @floatFromInt(i)) / rootObjectCount),
+            ));
+            const modelOffset = math.Mat4x4.translate(motion);
+
             object.transform.local2World = math.Mat4x4.ident.mul(&position);
             object.transform.local2World = math.Mat4x4.mul(&object.transform.local2World, &modelOffset);
         }
