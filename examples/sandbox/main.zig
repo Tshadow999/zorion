@@ -1,22 +1,24 @@
 const std = @import("std");
 
-const glfw = @import("mach-glfw");
-const math = @import("math");
-const gl = @import("gl");
+const _engine = @import("engine");
+const Engine = _engine.Zorion.Engine;
 
-const primitive = @import("primitives.zig");
-const resource = @import("resources.zig");
-const color = @import("color.zig");
-const Zorion = @import("zorion.zig");
-const input = @import("input.zig");
+const glfw = _engine.glfw;
+const math = _engine.math;
+const gl = _engine.gl;
 
-const Mesh = resource.Mesh;
-const Shader = resource.Shader;
-const Object = resource.Object;
-const Texture = resource.Texture;
+const input = _engine.input;
+
+const Material = _engine.Material;
+const Shader = _engine.Shader;
+const Texture = _engine.Texture;
+const Mesh = _engine.Mesh;
+const Object = _engine.Object;
+const primitive = _engine.primitive;
+const Color = _engine.Color;
 
 pub fn main() !void {
-    var engine = Zorion.Engine{};
+    var engine = Engine{};
     const window = try engine.init(.{ .fullscreen = true });
 
     defer engine.deinit();
@@ -26,8 +28,8 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     var shader = Shader{
-        .fragmentSource = @embedFile("Assets/frag.glsl"),
-        .vertexSource = @embedFile("Assets/vert.glsl"),
+        .fragmentSource = @embedFile("../../src/assets/frag.glsl"),
+        .vertexSource = @embedFile("../../src/assets/vert.glsl"),
     };
     try shader.compile();
     defer shader.deinit();
@@ -61,14 +63,14 @@ pub fn main() !void {
     defer prototypeTexture.deinit();
     prototypeTexture.create();
 
-    var prototypeMat = resource.Material{ .shader = &shader };
+    var prototypeMat = Material{ .shader = &shader };
 
-    try prototypeMat.addProperty("u_tint", color.black);
+    try prototypeMat.addProperty("u_tint", Color.black);
     try prototypeMat.addProperty("u_texture", &prototypeTexture);
     // try prototypeMat.addProperty("u_texture", &wallTexture);
 
-    var wallMat = resource.Material{ .shader = &shader };
-    try wallMat.addProperty("u_tint", color.blue);
+    var wallMat = Material{ .shader = &shader };
+    try wallMat.addProperty("u_tint", Color.blue);
     try wallMat.addProperty("u_texture", &prototypeTexture);
     //  try wallMat.addProperty("u_texture", &wallTexture);
 

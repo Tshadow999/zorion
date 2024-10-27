@@ -3,8 +3,8 @@ const std = @import("std");
 const math = @import("math");
 const gl = @import("gl");
 
-const c = @import("c.zig");
-const Color = @import("color.zig");
+const c = @import("engine").c;
+const Color = @import("engine").Color;
 
 pub const Scene = struct {
     objects: std.BoundedArray(Object, 10240),

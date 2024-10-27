@@ -6,40 +6,8 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "glfw-test",
-        .root_source_file = b.path("src/entrypoint.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    addDependencies(exe, b, target, optimize);
-
-    b.installArtifact(exe);
-
-    // Not sure what this is
-    // const exe_check = b.addExecutable(.{
-    //     .name = "glfw-test",
-    //     .root_source_file = b.path("src/zorion.zig"),
-    //     .target = target,
-    //     .optimize = optimize,
-    // });
-
-    // addDependencies(exe_check, b, target, optimize);
-
-    // const check = b.step("check", "Check if it compiles");
-    // check.dependOn(&exe_check.step);
-
-    const run_cmd = b.addRunArtifact(exe);
-
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
+    // Run steps in here
+    buildExamples(b, target, optimize);
 }
 
 // This is where all the dependencies should be added
@@ -62,16 +30,20 @@ fn addDependencies(
         .root_source_file = b.path("deps/gl41.zig"),
     }));
 
-    // Maybe need this later
-    // zgltf
+    // mach math
+    exe.root_module.addImport("math", b.createModule(.{
+        .root_source_file = b.path("deps/math/main.zig"),
+    }));
+
+    // Maybe need this later: zgltf
     // exe.root_module.addImport("zgltf", b.dependency("zgltf", .{
     //     .target = target,
     //     .optimize = optimize,
     // }).module("zgltf"));
 
-    // mach math
-    exe.root_module.addImport("math", b.createModule(.{
-        .root_source_file = b.path("deps/math/main.zig"),
+    // Add our own src as well
+    exe.root_module.addImport("engine", b.createModule(.{
+        .root_source_file = b.path("src/engine.zig"),
     }));
 
     // Include C
@@ -80,4 +52,32 @@ fn addDependencies(
     // exe.addCSourceFile(.{ .file = b.path("deps/cgltf.c"), .flags = &.{} });
 
     exe.addIncludePath(b.path("deps"));
+}
+
+// Add examples to the build system
+// Copied from mach
+fn buildExamples(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
+    for ([_]struct { name: []const u8 }{
+        .{ .name = "sandbox" },
+        .{ .name = "game1" },
+    }) |example| {
+        const exe = b.addExecutable(.{
+            .name = example.name,
+            .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
+            .target = target,
+            .optimize = optimize,
+        });
+
+        addDependencies(exe, b, target, optimize);
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+
+        const run_step = b.step(b.fmt("run-{s}", .{example.name}), b.fmt("Run {s}", .{example.name}));
+        run_step.dependOn(&run_cmd.step);
+    }
 }

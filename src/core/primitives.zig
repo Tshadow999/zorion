@@ -4,7 +4,7 @@ const math = @import("math");
 const gl = @import("gl");
 
 const resources = @import("resources.zig");
-const Color = @import("color.zig");
+const Color = @import("engine").Color;
 
 const Mesh = resources.Mesh;
 const Vertex = resources.Vertex;
