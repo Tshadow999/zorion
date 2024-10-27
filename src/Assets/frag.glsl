@@ -13,9 +13,9 @@ void main()
 {
     vec3 lightDir = normalize(vec3(1.0f, 1.0f, 0.5f));
     float light = max(dot(o_norm, lightDir), 0.0f);
-    //vec3 diffuse = vec3(0.8f, 0.3f, 0.2f);
+    vec4 diffuse = vec4(0.8f, 0.3f, 0.2f, 1.0);
     vec4 tex = texture(u_texture, o_uv);
-    vec4 color = o_color * tex;
+    vec4 color = diffuse * tex;
 
     FragColor = mix(color, color * u_tint, 0.5f) * light;
 }

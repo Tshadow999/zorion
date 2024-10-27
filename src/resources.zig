@@ -218,6 +218,8 @@ pub const Shader = struct {
         gl.linkProgram(self.program);
         try checkShaderLinkStatus(self.program);
 
+        gl.detachShader(self.program, vertShader);
+        gl.detachShader(self.program, fragShader);
         gl.deleteShader(vertShader);
         gl.deleteShader(fragShader);
     }

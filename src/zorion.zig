@@ -72,6 +72,7 @@ pub const Engine = struct {
 
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
+        self.window.setInputModeCursor(.disabled);
 
         gl.polygonMode(gl.FRONT, gl.FILL); // Possible modes: point, line or fill
 
@@ -85,6 +86,7 @@ pub const Engine = struct {
     }
 
     pub fn render(self: *Engine) void {
+        input.resetMouseRelative();
         self.window.swapBuffers();
 
         glfw.pollEvents();

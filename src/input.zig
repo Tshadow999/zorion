@@ -13,6 +13,8 @@ const Event = struct {
 const MouseState = struct {
     x: f32 = 0,
     y: f32 = 0,
+    relativeX: f32 = 0,
+    relativeY: f32 = 0,
 };
 
 var mouse = MouseState{};
@@ -155,11 +157,19 @@ pub fn isReleased(key: Key) bool {
 }
 
 pub fn mousePosCallback(x: f32, y: f32) void {
+    mouse.relativeX = x - mouse.x;
+    mouse.relativeY = y - mouse.y;
+
     mouse.x = x;
     mouse.y = y;
 }
 
 /// Top left (0, 0) and bottom right: window size
-pub fn getMouseScreenPos() MouseState {
+pub fn getMouseState() MouseState {
     return mouse;
+}
+
+pub fn resetMouseRelative() void {
+    mouse.relativeX = 0;
+    mouse.relativeY = 0;
 }

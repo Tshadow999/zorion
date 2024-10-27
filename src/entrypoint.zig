@@ -75,7 +75,8 @@ pub fn main() !void {
     var motion = math.vec3(0, 0, 0);
 
     var camOffset = math.vec3(-15.0, 0.0, 5);
-    var angleRadians: f32 = 0.0;
+    var angleY: f32 = 0.0;
+    var angleX: f32 = 0.0;
     const camMoveSpeed: f32 = 10;
 
     var pcg = std.rand.Pcg.init(456);
@@ -124,11 +125,9 @@ pub fn main() !void {
         }
 
         // Rotating camera
-        if (input.isPressed(&window, .Q)) {
-            angleRadians += camMoveSpeed * delta;
-        } else if (input.isPressed(&window, .E)) {
-            angleRadians -= camMoveSpeed * delta;
-        }
+        const mouseState = input.getMouseState();
+        angleY -= mouseState.relativeX * delta * math.tau;
+        angleX -= mouseState.relativeY * delta * math.pi;
 
         // Updating camera settings
         // if (input.isPressed(&window, .Q)) {
@@ -140,7 +139,9 @@ pub fn main() !void {
         // }
 
         const camTranslation = math.Mat4x4.translate(camOffset);
-        const rotationMat = math.Mat4x4.rotateX(angleRadians);
+        const rotationMatY = math.Mat4x4.rotateY(angleY);
+        const rotationMatX = math.Mat4x4.rotateX(angleX);
+        const rotationMat = math.Mat4x4.mul(&rotationMatY, &rotationMatX);
         engine.camera.view = math.Mat4x4.mul(&rotationMat, &camTranslation);
 
         // motion.v[0] = @floatCast(@sin(glfw.getTime()));
