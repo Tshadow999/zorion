@@ -28,8 +28,8 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     var shader = Shader{
-        .fragmentSource = @embedFile("../../src/assets/frag.glsl"),
-        .vertexSource = @embedFile("../../src/assets/vert.glsl"),
+        .fragmentSource = @embedFile("frag.glsl"),
+        .vertexSource = @embedFile("vert.glsl"),
     };
     try shader.compile();
     defer shader.deinit();

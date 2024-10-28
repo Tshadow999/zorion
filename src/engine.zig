@@ -1,16 +1,15 @@
 const std = @import("std");
-
 // Other imports
-const primitive = @import("core/primitives.zig");
-const resource = @import("core/resources.zig");
-const Color = @import("color.zig");
+pub const primitive = @import("core/primitives.zig");
+pub const resource = @import("core/resources.zig");
+pub const Color = @import("color.zig");
 pub const Zorion = @import("core/zorion.zig");
-const input = @import("core/input.zig");
-const c = @import("c.zig");
+pub const input = @import("core/input.zig");
+pub const c = @import("c.zig");
 
 // Resource definitions
-const Mesh = resource.Mesh;
-const Shader = resource.Shader;
-const Object = resource.Object;
-const Texture = resource.Texture;
-const Material = resource.Material;
+pub const Mesh = resource.Mesh;
+pub const Shader = resource.Shader;
+pub const Object = resource.Object;
+pub const Texture = resource.Texture;
+pub const Material = resource.Material;
