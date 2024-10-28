@@ -70,7 +70,7 @@ fn addDependencies(
     // }).module("zgltf"));
 
     // Add our own src as well
-    exe.root_module.addImport("engine", b.createModule(.{
+    const engineModule = b.createModule(.{
         .root_source_file = b.path("src/engine.zig"),
         .imports = &.{
             .{ .name = "mach-glfw", .module = glfw_dep.module("mach-glfw") },
@@ -78,7 +78,10 @@ fn addDependencies(
             .{ .name = "math", .module = mathModule },
         },
         .link_libc = true,
-    }));
+    });
+    engineModule.addIncludePath(b.path("deps"));
+
+    exe.root_module.addImport("engine", engineModule);
 
     // Include C
     exe.linkLibC();
