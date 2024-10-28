@@ -7,7 +7,7 @@ const glfw = _engine.glfw;
 const math = _engine.math;
 const gl = _engine.gl;
 
-const input = _engine.input;
+const Input = _engine.Input;
 
 const Material = _engine.Material;
 const Shader = _engine.Shader;
@@ -19,7 +19,7 @@ const Color = _engine.Color;
 
 pub fn main() !void {
     var engine = Engine{};
-    const window = try engine.init(.{ .fullscreen = true });
+    const window = try engine.init(.{ .fullscreen = true, .cursorMode = .disabled });
 
     defer engine.deinit();
 
@@ -48,8 +48,6 @@ pub fn main() !void {
     try primitive.cube(&cube, 1.5);
     cube.create();
     defer cube.deinit();
-
-    window.setKeyCallback(input.keyCallBack);
 
     var lineModeToggle = false;
 
@@ -103,37 +101,37 @@ pub fn main() !void {
         std.log.info("fps:{d}", .{1.0 / delta});
 
         // Quick escape
-        if (input.isJustPressed(.Escape)) {
+        if (Input.isJustPressed(.Escape)) {
             engine.quit();
         }
 
         // Polygon mode toggle
-        if (input.isJustPressed(.P)) {
+        if (Input.isJustPressed(.P)) {
             lineModeToggle = !lineModeToggle;
             gl.polygonMode(gl.FRONT, if (lineModeToggle) gl.LINE else gl.FILL); // try point line or fill
         }
 
         // Moving camera
-        if (input.isPressed(&window, .S)) {
+        if (Input.isPressed(&window, .S)) {
             camOffset.v[2] += camMoveSpeed * delta;
-        } else if (input.isPressed(&window, .W)) {
+        } else if (Input.isPressed(&window, .W)) {
             camOffset.v[2] -= camMoveSpeed * delta;
         }
 
-        if (input.isPressed(&window, .A)) {
+        if (Input.isPressed(&window, .A)) {
             camOffset.v[0] += camMoveSpeed * delta;
-        } else if (input.isPressed(&window, .D)) {
+        } else if (Input.isPressed(&window, .D)) {
             camOffset.v[0] -= camMoveSpeed * delta;
         }
 
-        if (input.isPressed(&window, .Down)) {
+        if (Input.isPressed(&window, .LeftCtrl)) {
             camOffset.v[1] += camMoveSpeed * delta;
-        } else if (input.isPressed(&window, .Up)) {
+        } else if (Input.isPressed(&window, .LeftShift)) {
             camOffset.v[1] -= camMoveSpeed * delta;
         }
 
         // Rotating camera
-        const mouseState = input.getMouseState();
+        const mouseState = Input.getMouseState();
         angleY -= mouseState.relativeX * delta * math.tau;
         angleX = math.clamp(angleX - mouseState.relativeY * delta * math.tau, -math.pi / 2.0, math.pi / 2.0);
 
@@ -177,6 +175,6 @@ pub fn main() !void {
         }
         try engine.scene.?.render();
 
-        input.clearEvents();
+        Input.clearEvents();
     }
 }

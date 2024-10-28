@@ -4,7 +4,7 @@ const glfw = @import("mach-glfw");
 const math = @import("math");
 const gl = @import("gl");
 
-const input = @import("input.zig");
+const Input = @import("input.zig");
 const resource = @import("resources.zig");
 const Scene = resource.Scene;
 
@@ -14,6 +14,7 @@ pub const WindowProps = struct {
     title: [:0]const u8 = "Zorion Engine",
     vsync: bool = true,
     fullscreen: bool = true,
+    cursorMode: glfw.Window.InputModeCursor = .normal,
 };
 
 pub const Engine = struct {
@@ -59,6 +60,7 @@ pub const Engine = struct {
         self.window = window;
 
         // Set up some callbacks
+        self.window.setKeyCallback(Input.keyCallBack);
         self.window.setFramebufferSizeCallback(frameBufferChangedCallback);
         self.window.setCursorPosCallback(getMousePosCallback);
 
@@ -72,7 +74,7 @@ pub const Engine = struct {
 
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
-        self.window.setInputModeCursor(.disabled);
+        self.window.setInputModeCursor(windowProps.cursorMode);
 
         gl.polygonMode(gl.FRONT, gl.FILL); // Possible modes: point, line or fill
 
@@ -86,7 +88,7 @@ pub const Engine = struct {
     }
 
     pub fn render(self: *Engine) void {
-        input.resetMouseRelative();
+        Input.resetMouseRelative();
         self.window.swapBuffers();
 
         glfw.pollEvents();
@@ -146,7 +148,7 @@ fn frameBufferChangedCallback(window: glfw.Window, width: u32, height: u32) void
 }
 
 fn getMousePosCallback(window: glfw.Window, xpos: f64, ypos: f64) void {
-    input.mousePosCallback(@floatCast(xpos), @floatCast(ypos));
+    Input.mousePosCallback(@floatCast(xpos), @floatCast(ypos));
     _ = window;
 }
 

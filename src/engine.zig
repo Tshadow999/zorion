@@ -9,7 +9,7 @@ pub const primitive = @import("core/primitives.zig");
 pub const resource = @import("core/resources.zig");
 pub const Color = @import("color.zig");
 pub const Zorion = @import("core/zorion.zig");
-pub const input = @import("core/input.zig");
+pub const Input = @import("core/input.zig");
 pub const c = @import("c.zig");
 
 // Resource definitions

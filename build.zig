@@ -1,5 +1,4 @@
 const std = @import("std");
-
 const mach_glfw = @import("mach_glfw");
 
 pub fn build(b: *std.Build) !void {

@@ -20,6 +20,6 @@ Then to run: `zig build run-{game}`
 
 ## Dependencies
 
-- [Mach](https://machengine.org/) for the math and glfw
+- [Mach](https://machengine.org/) for glfw, openGL and math
 - [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) for texture rendering
 - [Prototype generator](https://verythieflike.itch.io/prototype-texture-generator) for the prototype texture
