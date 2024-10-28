@@ -2,39 +2,42 @@ const std = @import("std");
 
 const mach_glfw = @import("mach_glfw");
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     // Run steps in here
-    buildExamples(b, target, optimize);
+    try buildExamples(b, target, optimize);
 }
 
 // Add examples to the build system
 // Copied from mach
-fn buildExamples(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
-    for ([_]struct { name: []const u8 }{
-        .{ .name = "sandbox" },
-        .{ .name = "game1" },
-    }) |example| {
-        const exe = b.addExecutable(.{
-            .name = example.name,
-            .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{example.name})),
-            .target = target,
-            .optimize = optimize,
-        });
+fn buildExamples(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !void {
+    var dir = try std.fs.cwd().openDir("examples", .{ .iterate = true });
+    defer dir.close();
 
-        addDependencies(exe, b, target, optimize);
-        b.installArtifact(exe);
+    var it = dir.iterate();
+    while (try it.next()) |entry| {
+        if (entry.kind == .directory) {
+            const exe = b.addExecutable(.{
+                .name = entry.name,
+                .root_source_file = b.path(b.fmt("examples/{s}/main.zig", .{entry.name})),
+                .target = target,
+                .optimize = optimize,
+            });
 
-        const run_cmd = b.addRunArtifact(exe);
-        run_cmd.step.dependOn(b.getInstallStep());
-        if (b.args) |args| {
-            run_cmd.addArgs(args);
+            addDependencies(exe, b, target, optimize);
+            b.installArtifact(exe);
+
+            const run_cmd = b.addRunArtifact(exe);
+            run_cmd.step.dependOn(b.getInstallStep());
+            if (b.args) |args| {
+                run_cmd.addArgs(args);
+            }
+
+            const run_step = b.step(b.fmt("run-{s}", .{entry.name}), b.fmt("Run {s}", .{entry.name}));
+            run_step.dependOn(&run_cmd.step);
         }
-
-        const run_step = b.step(b.fmt("run-{s}", .{example.name}), b.fmt("Run {s}", .{example.name}));
-        run_step.dependOn(&run_cmd.step);
     }
 }
 

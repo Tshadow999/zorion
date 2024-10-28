@@ -308,6 +308,11 @@ pub const Texture = struct {
         FailedLoading,
     };
 
+    /// Path must be from root dir.
+    ///
+    /// AKA: from where the build.zig file is.
+    ///
+    /// example from sandbox => path = "examples/sandbox/prototype.png"
     pub fn load(path: [:0]const u8) !Texture {
         var w: c_int = undefined;
         var h: c_int = undefined;
@@ -317,6 +322,7 @@ pub const Texture = struct {
         const buffer = c.stbi_load(path, &w, &h, &channels, targetChannels);
 
         if (buffer == null) {
+            std.log.err("FAILED BECAUSE:{s}", .{c.stbi_failure_reason()});
             return Error.FailedLoading;
         }
 

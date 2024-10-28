@@ -55,11 +55,11 @@ pub fn main() !void {
 
     engine.createScene();
 
-    var wallTexture = try Texture.load("src/Assets/wall.jpg");
+    var wallTexture = try Texture.load("examples/sandbox/wall.jpg");
     defer wallTexture.deinit();
     wallTexture.create();
 
-    var prototypeTexture = try Texture.load("src/Assets/prototype.png");
+    var prototypeTexture = try Texture.load("examples/sandbox/prototype.png");
     defer prototypeTexture.deinit();
     prototypeTexture.create();
 

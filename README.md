@@ -12,8 +12,11 @@ Will feature the following at some point:
 Use zig 0.13.0
 
 Then use the command `zig build` to create an exe in the zig-out/bin directory.
+Or use `zig build run-{exampledir}` to imediately run the executable from the examples
 
-Or use `zig build run` to imediately run the executable
+## Making more games
+Create a new directory inside `examples/` and add your `main.zig` file.
+Then to run: `zig build run-{game}`
 
 ## Dependencies
 
